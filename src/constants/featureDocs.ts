@@ -655,28 +655,35 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
     summary:
       'Ferramentas técnicas de prancheta, inspeção/importação do estado JSON completo, exportação vetorial limpa e entrega via Cloudflare Workers Static Assets.',
     howItWorks:
-      'A renderização interativa inclui camadas de guias (#layer-interaction) e cotas (#layer-dimensions). Na exportação SVG, cleanExport: true remove essas camadas auxiliares e emite um arquivo XML autônomo pronto para Illustrator, Figma ou impressão. Em produção, o Worker em worker/index.ts serve a SPA via env.ASSETS e responde rotas /api/* primeiro (run_worker_first).',
+      'A renderização interativa inclui camadas de guias (#layer-interaction) e cotas (#layer-dimensions). Na exportação SVG, cleanExport: true remove essas camadas auxiliares e emite um arquivo XML autônomo pronto para Illustrator, Figma ou impressão. Em telas móveis 9:16 (<= 920px), a interface reorganiza-se em Bottom Sheet retrátil (collapsed/half/full), barra inferior fixa para o polegar, gesto pinch-to-zoom e HUD flutuante ao tocar em slots. Em produção, o Worker em worker/index.ts serve a SPA via env.ASSETS e responde rotas /api/* primeiro.',
     parameters: [
       {
         name: 'Guias de Slots',
-        control: 'Botão Toggle (Topbar)',
+        control: 'Botão Toggle (Topbar / Menu ⋮)',
         rangeOrOptions: 'Ligado / Desligado',
         defaultValue: 'Desligado',
         behavior: 'Mostra caixas tracejadas e etiquetas com o ID exato de cada slot (ex: TIPO_1_SLOT_1).'
       },
       {
         name: 'Cotas / Níveis',
-        control: 'Botão Toggle (Topbar)',
+        control: 'Botão Toggle (Topbar / Menu ⋮)',
         rangeOrOptions: 'Ligado / Desligado',
         defaultValue: 'Ligado',
         behavior: 'Exibe régua de largura (L), altura total (H) e elevação em metros de cada piso.'
       },
       {
-        name: 'Zoom da Prancheta',
-        control: 'Toolbar Flutuante (− / % / + / FIT)',
-        rangeOrOptions: '40% a 220% (step 15%)',
-        defaultValue: '100%',
-        behavior: 'Aplica escala CSS no #svgStage sem alterar as coordenadas do SVG exportado.'
+        name: 'Zoom da Prancheta & Pinch Touchscreen',
+        control: 'Toolbar Flutuante (− / % / + / FIT) + Gesto Pinça',
+        rangeOrOptions: '40% a 220% (FIT inteligente no mobile 9:16)',
+        defaultValue: '100% Desktop · Auto-Fit Mobile',
+        behavior: 'Permite pinça com dois dedos em telas touch e auto-enquadramento da fachada na proporção 9:16 sem alterar o SVG exportado.'
+      },
+      {
+        name: 'Navegação Mobile (Bottom Dock & Bottom Sheet)',
+        control: 'Barra Inferior + Gaveta Retrátil em 3 Níveis',
+        rangeOrOptions: 'collapsed (Prancheta) | half (Split 9:16) | full (Expandido)',
+        defaultValue: 'half (Split 50/50)',
+        behavior: 'Permite arrastar a alça ou alternar rapidamente entre visualização de tela cheia da fachada e edição com alvos táteis >= 44px.'
       },
       {
         name: 'JSON do Projeto',
@@ -688,9 +695,9 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
       },
       {
         name: 'Exportar SVG',
-        control: 'Botão Primário (Topbar)',
+        control: 'Botão Primário (Topbar / Menu ⋮)',
         rangeOrOptions: 'Download .svg limpo',
-        defaultValue: 'ny-facade-etapa2-3-<N>pav.svg',
+        defaultValue: 'ny-facade-etapa2-4-<N>pav.svg',
         behavior: 'Gera XML SVG puro sem hitboxes, seleção ou marcações de guia.'
       }
     ],

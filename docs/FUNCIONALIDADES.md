@@ -102,7 +102,11 @@ O **NY Facade Studio** é um estúdio paramétrico e data-driven para composiç�
 ### 3.8. Ferramentas de Prancheta, JSON & Exportação
 - **Guias de Slots**: Exibe retângulos tracejados e rótulos com o ID de cada slot (`ATICO_SLOT_1`, `TIPO_1_SLOT_2`, `gf-shop-single`, `TERREO_PORTA`, etc.).
 - **Cotas / Níveis**: Mostra largura `L:<w>u`, altura `H:<h>u` e régua altimétrica convertida para metros (`(bottomY - py) * 0.028`).
-- **Zoom**: `40%` a `220%` (`−`, `+`, `FIT`).
+- **Zoom**: `40%` a `220%` (`−`, `+`, `FIT`, além de **Pinch-to-Zoom com 2 dedos** e Auto-Fit no mobile 9:16).
+- **UX Mobile & Touchscreen (Formato 9:16 — Etapa 2.6)**:
+  - Layout full-height `100dvh` com suporte a `safe-area-inset-bottom`, Topbar compacta com menu `⋮ Ações`, **Bottom Navigation Dock** fixa na base para o polegar e **Bottom Sheet retrátil em 3 níveis** (`collapsed`, `half` Split 9:16 e `full`) com arraste vertical.
+  - **Touch Slot HUD**: ao tocar em janelas ou porta no SVG, exibe barra flutuante tátil com botão direto **"Trocar Módulo"**.
+  - Controles otimizados (`>= 42px–44px` de área de toque, `font-size: 16px` anti-zoom no iOS Safari, modais bottom sheet e tabela responsiva em cards).
 - **JSON do Projeto**: Modal para inspecionar, copiar, recarregar e importar o estado completo (`building`, `windowLibrary`, `doorLibrary`, `slotAssignments`, `slotOverrides`).
 - **Exportar SVG**: Baixa `ny-facade-etapa2-2-<N>pav.svg` com `cleanExport: true` (sem camadas de interação ou guias).
 - **Persistência**: Salvamento automático e migração segura em `localStorage` (`ny_facade_studio_v2_1_state`).

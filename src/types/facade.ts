@@ -25,6 +25,7 @@ export type FireEscapePlacement = 'left' | 'center' | 'right';
 
 export type SlotZone = 'typical' | 'attic' | 'ground' | 'door';
 export type ActiveTab = 'structure' | 'windows' | 'doors' | 'interpolation' | 'guide';
+export type MobileSheetSnap = 'collapsed' | 'half' | 'full';
 
 export interface BuildingColors {
   wall: string;
@@ -151,6 +152,7 @@ export interface UIState {
   showSlotGuides: boolean;
   showDimensions: boolean;
   showDoorSketch: boolean;
+  mobileSheetSnap?: MobileSheetSnap;
 }
 
 export interface FacadeState {

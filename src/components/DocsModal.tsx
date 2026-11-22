@@ -124,15 +124,27 @@ export function DocsModal() {
                   <tbody>
                     {activeDoc.parameters.map((param) => (
                       <tr key={param.name}>
-                        <td style={{ fontWeight: 600, color: '#FFFFFF' }}>{param.name}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5 }}>
+                        <td data-label="Parâmetro" style={{ fontWeight: 600, color: '#FFFFFF' }}>
+                          {param.name}
+                        </td>
+                        <td
+                          data-label="Controle"
+                          style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5 }}
+                        >
                           {param.control}
                         </td>
-                        <td style={{ color: 'var(--accent)' }}>{param.rangeOrOptions}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5 }}>
+                        <td data-label="Faixa / Opções" style={{ color: 'var(--accent)' }}>
+                          {param.rangeOrOptions}
+                        </td>
+                        <td
+                          data-label="Padrão"
+                          style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5 }}
+                        >
                           {param.defaultValue}
                         </td>
-                        <td style={{ color: 'var(--text-muted)' }}>{param.behavior}</td>
+                        <td data-label="Impacto" style={{ color: 'var(--text-muted)' }}>
+                          {param.behavior}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

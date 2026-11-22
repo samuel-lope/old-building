@@ -1188,42 +1188,652 @@ input[type="color"]::-webkit-color-swatch {
   border-radius: 1px;
 }
 
+.btn,
+.tab-btn,
+.seg-btn,
+.library-item,
+.preset-btn,
+.toggle-row,
+.help-btn,
+.mobile-action-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(243, 168, 71, 0.2);
+}
+
+.topbar-mobile-actions,
+.mobile-sheet-header,
+.tab-icon,
+.tab-label-mobile,
+.btn-mobile-only,
+.touch-slot-hud,
+.mobile-actions-backdrop {
+  display: none;
+}
+
+.mobile-actions-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 9, 12, 0.72);
+  z-index: 75;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-actions-sheet {
+  width: 100%;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-strong);
+  border-radius: 14px 14px 0 0;
+  padding: 14px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.6);
+}
+
+.mobile-actions-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-action-item {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mobile-action-item.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.mobile-action-item--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #161009;
+  font-weight: 600;
+}
+
+.mobile-action-item--primary .mono-val {
+  color: #161009;
+  background: rgba(0, 0, 0, 0.14);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+.mobile-action-item--danger {
+  color: var(--danger);
+  border-color: rgba(224, 90, 90, 0.35);
+  background: var(--danger-soft);
+}
+
+@media (hover: none) {
+  .slot-tooltip {
+    display: none !important;
+  }
+}
+
+/* =====================================================================
+   MOBILE-FIRST 9:16 & TOUCHSCREEN LAYOUT
+   ===================================================================== */
 @media (max-width: 920px) {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .app-shell {
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
+
+  /* Barra Superior Compacta */
   .topbar {
-    height: auto;
-    flex-wrap: wrap;
-    padding: 10px 12px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0 10px;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
+
+  .brand {
+    gap: 7px;
+  }
+
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+    font-size: 10px;
+  }
+
+  .brand-title {
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand-badge,
+  .desktop-actions,
+  .tab-label-desktop,
+  .slot-tooltip {
+    display: none !important;
+  }
+
+  .topbar-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .mobile-actions-backdrop {
+    display: flex;
+  }
+
+  .btn-touch-sm {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .btn-touch-icon {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  /* Workspace Vertical 9:16: Viewport acima + Bottom Sheet abaixo */
   .workspace {
-    flex-direction: column-reverse;
-    overflow: visible;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
+
+  .viewport-wrap {
+    order: 1;
+    flex: 1;
+    min-height: 150px;
+    overflow: hidden;
+  }
+
+  .viewport-toolbar {
+    top: 8px;
+    right: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .viewport-toolbar .btn {
+    min-height: 34px;
+    min-width: 34px;
+    font-size: 12px;
+  }
+
+  .btn-mobile-only {
+    display: inline-flex;
+    padding: 0 9px !important;
+    font-weight: 600;
+    color: var(--accent);
+    border-color: var(--accent-border);
+  }
+
+  .canvas-scroll {
+    padding: 48px 10px 14px;
+    touch-action: pan-x pan-y;
+    display: flex;
+    align-items: safe center;
+    justify-content: safe center;
+  }
+
+  #svgStage {
+    margin: auto;
+  }
+
+  /* HUD Flutuante ao Tocar em Slot no SVG */
+  .touch-slot-hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    margin: 0 8px 8px;
+    background: rgba(20, 22, 27, 0.96);
+    border: 1px solid var(--accent-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 15;
+  }
+
+  .touch-slot-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .touch-slot-mod {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .touch-slot-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .statusbar {
+    height: 26px;
+    min-height: 26px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .statusbar-group:last-child {
+    display: none;
+  }
+
+  /* Bottom Sheet Retrátil (Sidebar adaptativa) */
   .sidebar {
+    order: 2;
     width: 100%;
     min-width: 0;
     max-width: none;
-    height: auto;
+    height: 50dvh;
     border-right: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-strong);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -10px 32px rgba(0, 0, 0, 0.58);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 25;
+    transition: height 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .viewport-wrap {
-    min-height: 62vh;
+
+  .sidebar.sidebar--snap-collapsed {
+    height: calc(102px + env(safe-area-inset-bottom, 0px));
   }
-  .brand-badge {
+
+  .sidebar.sidebar--snap-collapsed .sidebar-body {
     display: none;
   }
+
+  .sidebar.sidebar--snap-half {
+    height: 50dvh;
+  }
+
+  .sidebar.sidebar--snap-full {
+    height: calc(100dvh - 50px);
+  }
+
+  .mobile-sheet-header {
+    display: flex;
+    flex-direction: column;
+    order: 1;
+    flex-shrink: 0;
+    background: #121419;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sheet-drag-zone {
+    width: 100%;
+    padding: 7px 0 4px;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .sheet-drag-pill {
+    width: 40px;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--border-strong);
+  }
+
+  .sheet-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 12px 7px;
+    gap: 8px;
+  }
+
+  .sheet-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .sheet-active-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .sheet-snap-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-snap {
+    height: 28px;
+    min-width: 30px;
+    padding: 0 7px;
+    font-size: 11px;
+  }
+
+  .sidebar-body {
+    order: 2;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 14px 20px;
+  }
+
+  /* Bottom Tab Dock Fixo (Zona do Polegar) */
+  .tabs-bar {
+    order: 3;
+    flex-shrink: 0;
+    min-height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: #0f1116;
+    border-top: 1px solid var(--border-strong);
+    border-bottom: none;
+  }
+
+  .tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    min-height: 54px;
+    border-bottom: none;
+    border-top: 2px solid transparent;
+  }
+
+  .tab-btn.active {
+    border-bottom-color: transparent;
+    border-top-color: var(--accent);
+  }
+
+  .tab-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tab-label-mobile {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  /* Controles Touch-First (>= 44px e anti-zoom iOS) */
+  .text-input,
+  .select-input,
+  .json-textarea {
+    font-size: 16px;
+    min-height: 42px;
+    padding: 0 12px;
+  }
+
+  .json-textarea {
+    padding: 12px;
+    height: 100%;
+    min-height: 240px;
+  }
+
+  input[type="range"] {
+    height: 36px;
+    touch-action: pan-y;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-top: -9px;
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 6px;
+    border-radius: 3px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+  }
+
+  .seg-btn {
+    min-height: 42px;
+    height: auto;
+    font-size: 12px;
+    padding: 6px 6px;
+    line-height: 1.15;
+  }
+
+  .toggle-row {
+    min-height: 50px;
+    padding: 9px 11px;
+  }
+
+  .switch {
+    width: 44px;
+    height: 24px;
+  }
+
+  .switch-track {
+    border-radius: 12px;
+  }
+
+  .switch-track::after {
+    width: 18px;
+    height: 18px;
+    top: 2px;
+    left: 2px;
+    border-radius: 50%;
+  }
+
+  .switch input:checked + .switch-track::after {
+    transform: translateX(20px);
+  }
+
+  .preset-btn {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .color-cell {
+    min-height: 46px;
+    padding: 6px 9px;
+  }
+
+  input[type="color"] {
+    width: 32px;
+    height: 32px;
+  }
+
+  .library-list {
+    max-height: 210px;
+  }
+
+  .library-item {
+    min-height: 48px;
+    padding: 9px 10px;
+  }
+
+  .help-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .module-preview-box {
+    height: 165px;
+  }
+
+  /* Modais como Bottom Sheets Full-Width no Mobile */
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-box,
+  .modal-box.docs-modal-box {
+    max-width: none;
+    width: 100%;
+    height: 92dvh;
+    max-height: 92dvh;
+    border-radius: 14px 14px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .modal-header {
+    padding: 12px 14px;
+  }
+
+  .modal-footer .btn {
+    min-height: 40px;
+  }
+
   .docs-layout {
     flex-direction: column;
   }
+
   .docs-nav {
     width: 100%;
-    max-height: 180px;
+    min-width: 0;
+    max-height: none;
     border-right: none;
     border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    scroll-snap-type: x proximity;
+  }
+
+  .docs-nav .text-input {
+    display: none;
+  }
+
+  .docs-nav-item {
+    width: auto;
+    min-width: 165px;
+    flex-shrink: 0;
+    min-height: 48px;
+    scroll-snap-align: start;
+    background: var(--bg-surface);
+    border-color: var(--border);
+  }
+
+  .docs-content {
+    padding: 14px 12px 24px;
+  }
+
+  .toast {
+    bottom: calc(114px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 24px);
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .docs-table,
+  .docs-table thead,
+  .docs-table tbody,
+  .docs-table tr,
+  .docs-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .docs-table thead {
+    display: none;
+  }
+
+  .docs-table tr {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-strong);
+  }
+
+  .docs-table td {
+    border-bottom: none;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+
+  .docs-table td::before {
+    content: attr(data-label) ": ";
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+}
+
+@media (max-width: 420px) {
+  .seg-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .brand-title {
+    max-width: 112px;
   }
 }

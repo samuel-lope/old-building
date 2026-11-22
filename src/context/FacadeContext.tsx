@@ -18,6 +18,7 @@ import type {
   FacadeState,
   GroundDoorCount,
   GroundShopMode,
+  MobileSheetSnap,
   SlotZone,
   WindowModule
 } from '../types/facade';
@@ -94,12 +95,16 @@ interface FacadeContextValue {
   editingModule: WindowModule;
   editingDoorModule: DoorModule;
   currentZoom: number;
+  mobileSheetSnap: MobileSheetSnap;
   toastMessage: string | null;
   isJsonModalOpen: boolean;
   isDocsModalOpen: boolean;
   activeDocSectionId: string;
   showToast: (msg: string) => void;
   setActiveTab: (tab: ActiveTab) => void;
+  setMobileSheetSnap: (snap: MobileSheetSnap) => void;
+  cycleMobileSheetSnap: () => void;
+  setZoom: (zoom: number) => void;
   toggleSlotGuides: () => void;
   toggleDimensions: () => void;
   toggleDoorSketch: () => void;
@@ -140,6 +145,7 @@ const FacadeContext = createContext<FacadeContextValue | null>(null);
 export function FacadeProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<FacadeState>(() => loadState());
   const [currentZoom, setCurrentZoom] = useState<number>(1);
+  const [mobileSheetSnap, setMobileSheetSnapState] = useState<MobileSheetSnap>('half');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
@@ -180,7 +186,30 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
     [state.doorLibrary, state.ui.editingDoorModuleId]
   );
 
+  const setMobileSheetSnap = useCallback((snap: MobileSheetSnap) => {
+    setMobileSheetSnapState(snap);
+  }, []);
+
+  const cycleMobileSheetSnap = useCallback(() => {
+    setMobileSheetSnapState((cur) => {
+      if (cur === 'collapsed') return 'half';
+      if (cur === 'half') return 'full';
+      return 'collapsed';
+    });
+  }, []);
+
+  const activeTabRef = useRef<ActiveTab>(state.ui.activeTab);
+  activeTabRef.current = state.ui.activeTab;
+
   const setActiveTab = useCallback((tab: ActiveTab) => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 920;
+    if (isMobile) {
+      if (activeTabRef.current === tab) {
+        setMobileSheetSnapState((cur) => (cur === 'collapsed' ? 'half' : 'collapsed'));
+      } else {
+        setMobileSheetSnapState((cur) => (cur === 'collapsed' ? 'half' : cur));
+      }
+    }
     setState((prev) => ({ ...prev, ui: { ...prev.ui, activeTab: tab } }));
   }, []);
 
@@ -503,12 +532,13 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const selectSlot = useCallback((slotId: string | null, switchToInterpolation = false) => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 920;
     setState((prev) => ({
       ...prev,
       ui: {
         ...prev.ui,
         selectedSlotId: slotId,
-        activeTab: switchToInterpolation ? 'interpolation' : prev.ui.activeTab
+        activeTab: switchToInterpolation && !isMobile ? 'interpolation' : prev.ui.activeTab
       }
     }));
   }, []);
@@ -530,6 +560,9 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
     showToast('Todas as sobrescritas individuais foram limpas');
   }, [showToast]);
 
+  const setZoom = useCallback((zoom: number) => {
+    setCurrentZoom(Math.max(0.4, Math.min(2.2, r2(zoom))));
+  }, []);
   const zoomIn = useCallback(() => setCurrentZoom((z) => Math.min(2.2, r2(z + 0.15))), []);
   const zoomOut = useCallback(() => setCurrentZoom((z) => Math.max(0.4, r2(z - 0.15))), []);
   const zoomFit = useCallback(() => setCurrentZoom(1), []);
@@ -626,12 +659,16 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
     editingModule,
     editingDoorModule,
     currentZoom,
+    mobileSheetSnap,
     toastMessage,
     isJsonModalOpen,
     isDocsModalOpen,
     activeDocSectionId,
     showToast,
     setActiveTab,
+    setMobileSheetSnap,
+    cycleMobileSheetSnap,
+    setZoom,
     toggleSlotGuides,
     toggleDimensions,
     toggleDoorSketch,

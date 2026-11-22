@@ -259,12 +259,17 @@ describe('Motor Procedural NY Facade Studio (Etapa 2.4)', () => {
     expect(thickLayout.totalHeight - thinLayout.totalHeight).toBe(128);
   });
 
-  it('expõe documentação completa para todas as 16 seções de funcionalidades', () => {
+  it('expõe documentação completa para todas as 16 seções incluindo navegação mobile 9:16', () => {
     expect(FEATURE_DOCS.length).toBe(16);
     FEATURE_DOCS.forEach((doc) => {
       expect(doc.title.length).toBeGreaterThan(3);
       expect(doc.parameters.length).toBeGreaterThan(0);
       expect(doc.tips.length).toBeGreaterThan(0);
     });
+    const toolsDoc = FEATURE_DOCS.find((d) => d.id === 'ferramentas-viewport-export')!;
+    expect(toolsDoc.howItWorks).toContain('9:16');
+    expect(
+      toolsDoc.parameters.some((p) => p.name.includes('Bottom Dock') || p.name.includes('Mobile'))
+    ).toBe(true);
   });
 });
