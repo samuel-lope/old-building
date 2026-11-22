@@ -200,12 +200,13 @@ export function createDefaultDoorLibrary(): DoorModule[] {
 
 export function createDefaultState(): FacadeState {
   return {
-    version: '2.4.0',
+    version: '2.5.0',
     building: {
       bodyWidth: 280,
       typicalFloors: 2,
       typicalSlotsCount: 3,
       battlementsCount: 4,
+      battlementsStyle: 'classic',
       hasAttic: true,
       hasCenterBand: true,
       hasPlinth: true,
@@ -219,6 +220,8 @@ export function createDefaultState(): FacadeState {
       hasQuoins: true,
       columnBandsMode: 'all_bays',
       corniceStyle: 'dentils',
+      corniceHeight: 38,
+      corniceFlush: false,
       hasFooterGarden: true,
       gardenStyle: 'iron_rail_hedges',
       hasEntranceStairs: true,

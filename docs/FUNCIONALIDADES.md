@@ -30,12 +30,13 @@ O **NY Facade Studio** é um estúdio paramétrico e data-driven para composiç�
 ### 3.1. Volumetria, Traço, Paredes & Elementos Externos (`1. Estrutura`)
 | Parâmetro | Faixa / Opções | Padrão | Regra Procedural |
 | --- | --- | --- | --- |
-| **Pavimentos Tipo** | `1` a `6` | `2` | Cada andar adiciona `126u` de alvenaria + `38u` de cornija/friso (`26u` + `12u`) e gera `TIPO_<andar>_SLOT_<i>`. |
-| **Largura da Fachada** | `220u` a `520u` (step `10`) | `280u` | Define `bodyWidth`. Cornijas projetam `+10u` de cada lado (`corniceWidth = bodyWidth + 20u`). |
+| **Pavimentos Tipo** | `1` a `6` | `2` | Cada andar adiciona `126u` de alvenaria + espessura da cornija e gera `TIPO_<andar>_SLOT_<i>`. |
+| **Largura da Fachada** | `220u` a `520u` (step `10`) | `280u` | Define `bodyWidth`. Em balanço projeta `+10u` (`corniceWidth = bodyWidth + 20u`); quando rente, `corniceWidth = bodyWidth`. |
 | **Janelas por Pavimento Tipo** | `2` a `6` Slots | `3 Slots` | Subdivide o pavimento respeitando cunhais e faixas de colunas; ajusta o ático para `max(3, count)` slots. |
-| **Seteiras (Ameias)** | `2` a `6` | `4` | `buildBattlementsPath` calcula merlões e rebaixos na razão `1 : 1.12` com `38u` de altura total. |
+| **Ameias (Seteiras & Tipo)** | `2`–`6` · 5 estilos (`classic`, `stepped`, `arched`, `pediment`, `balustrade`) | `4` · `Clássica` | Herda textura de tijolos/cantaria da parede (`<clipPath>`), renderiza pingadeira superior em pedra e silhuetas especiais. |
+| **Cornijas (Altura & Alinhamento)** | Altura `16u`–`56u` · `Com Balanço (+10u)` ou `Rente à Fachada (0u)` | `38u` · `Balanço` | Escala proporcionalmente moldura, friso e ornamentos (`dentils`/`modillions`), podendo alinhar as cornijas rentes às laterais (`rx="0"`). |
 | **Contorno Edificação / Elementos** | `2.0u–8.0u` / `1.0u–4.5u` | `5.0u` / `2.40u` | Separa a hierarquia de traço da massa construtiva e dos detalhes internos de janelas, portas e gradis. |
-| **Detalhamento das Paredes** | Lisa, Tijolos Clássicos, Tijolos Detalhados, Cantaria | `Tijolos Clássicos NY` | Aplica `<pattern>` de alvenaria, blocos acentuados, cunhais (`hasQuoins`) e cornijas c/ dentículos ou mísulas. |
+| **Detalhamento das Paredes** | Lisa, Tijolos Clássicos, Tijolos Detalhados, Cantaria | `Tijolos Clássicos NY` | Aplica `<pattern>` de alvenaria, blocos acentuados nas paredes e nas ameias, cunhais (`hasQuoins`) e ornamento das cornijas. |
 | **Faixas de Colunas** | `Nenhuma`, `Central`, `Bordas`, `Entre Vãos` | `Entre Vãos` | Renderiza pilastras caneladas com base e capitel sem sobrepor os vãos de janela. |
 | **Jardim no Rodapé** | `Gradil + Sebes`, `Floreira Pedra`, `Canteiro Floral` | `Ligado` | Ocupa o rodapé sob a vitrine evitando `TERREO_PORTA`. |
 | **Escada na Porta (Stoop)** | `Stoop Pedra`, `Corrimão Ferro`, `Degraus Largos` | `Ligado` | Escadaria frontal ancorada sob `TERREO_PORTA`. |

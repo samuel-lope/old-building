@@ -9,7 +9,7 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
     summary:
       'Define a massa arquitetônica do edifício: número de pavimentos tipo, largura útil do corpo, densidade de vãos por andar e coroamento com ameias.',
     howItWorks:
-      'O motor computeFacadeLayout empilha verticalmente cobertura (38u), cornija (38u), ático opcional (68u + 38u), N pavimentos tipo (126u + 38u cada) e térreo (156u). Cada alteração recalcula automaticamente as proporções dos vãos, pilastras e cotas altimétricas (1px = 0,028m).',
+      'O motor computeFacadeLayout empilha verticalmente cobertura (38u), cornija ajustável (16u–56u, padrão 38u), ático opcional (68u + cornija), N pavimentos tipo (126u + cornija cada) e térreo (156u). Cada alteração recalcula automaticamente as proporções dos vãos, pilastras e cotas altimétricas (1px = 0,028m).',
     parameters: [
       {
         name: 'Pavimentos Tipo',
@@ -17,7 +17,7 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
         rangeOrOptions: '1 a 6 (step 1)',
         defaultValue: '2',
         behavior:
-          'Multiplica os andares intermediários. Cada pavimento adiciona 126u de parede + 38u de cornija/friso e cria slots TIPO_<andar>_SLOT_<i>.'
+          'Multiplica os andares intermediários. Cada pavimento adiciona 126u de parede + altura da cornija e cria slots TIPO_<andar>_SLOT_<i>.'
       },
       {
         name: 'Largura da Fachada',
@@ -25,7 +25,7 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
         rangeOrOptions: '220u a 520u (step 10)',
         defaultValue: '280u',
         behavior:
-          'Define bodyWidth. As cornijas projetam +10u em cada lateral (corniceW = bodyWidth + 20u) e os vãos e colunas expandem proporcionalmente.'
+          'Define bodyWidth. Quando em balanço, as cornijas projetam +10u em cada lateral (corniceW = bodyWidth + 20u); quando rentes, corniceW = bodyWidth.'
       },
       {
         name: 'Janelas por Pavimento Tipo',
@@ -36,12 +36,13 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
           'Altera o ritmo de aberturas entre 2 e 6 janelas por andar, sincronizando o ático e preservando respiro para pilastras e cunhais.'
       },
       {
-        name: 'Quantidade de Seteiras (Ameias)',
-        control: 'Grupo Segmentado',
-        rangeOrOptions: '2 | 3 | 4 | 5 | 6',
-        defaultValue: '4',
+        name: 'Quantidade e Tipo de Ameias (Seteiras)',
+        control: 'Grupo Segmentado + Select (selBattlementsStyle)',
+        rangeOrOptions:
+          '2 a 6 seteiras · Clássica | Escalonada | Arqueada | Frontão Central | Balaustrada',
+        defaultValue: '4 · Clássica Retangular',
         behavior:
-          'Controla os merlões da platibanda superior via buildBattlementsPath, mantendo proporção constante entre merlão e rebaixo (1 : 1,12).'
+          'Define a silhueta do coroamento superior (merlões, degraus, arcos, frontão c/ óculo ou platibanda c/ balaústres), herda automaticamente a textura de tijolos/cantaria da parede e inclui pingadeira superior em pedra.'
       }
     ],
     tips: [
@@ -82,7 +83,7 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
           'Alvenaria Lisa | Tijolos Clássicos NY | Tijolos Detalhados + Blocos | Blocos de Cantaria (Ashlar)',
         defaultValue: 'Tijolos Clássicos NY',
         behavior:
-          'Aplica textura vetorial de alvenaria e blocos acentuados sobre as superfícies de parede.'
+          'Aplica textura vetorial de alvenaria e blocos acentuados sobre todas as paredes dos pavimentos e também sobre as ameias/seteiras da cobertura.'
       },
       {
         name: 'Faixas de Colunas / Pilastras',
@@ -93,12 +94,13 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
           'Insere pilastras caneladas com capitel e base no centro, nas extremidades ou dividindo todas as prumadas de janelas.'
       },
       {
-        name: 'Ornamento das Cornijas & Cunhais',
-        control: 'Grupo Segmentado + Switch',
-        rangeOrOptions: 'Clássica | Dentículos | Mísulas · Cunhais Ligado/Desligado',
-        defaultValue: 'Dentículos + Cunhais Ligados',
+        name: 'Ornamento, Espessura & Alinhamento das Cornijas',
+        control: 'Segmentados + Slider (inpCorniceHeight) + Switch Cunhais',
+        rangeOrOptions:
+          'Clássica | Dentículos | Mísulas · Altura 16u–56u · Com Balanço (+10u) / Rente (0u)',
+        defaultValue: 'Dentículos · 38u · Com Balanço',
         behavior:
-          'Enriquece o friso das cornijas com dentículos/mísulas e adiciona blocos de cantaria alternados nas quinas laterais.'
+          'Escala proporcionalmente o corpo e o friso das cornijas (junto com dentículos/mísulas) e permite deixá-las rentes aos limites laterais do prédio (0u).'
       }
     ],
     tips: [

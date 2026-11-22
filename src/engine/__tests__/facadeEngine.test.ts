@@ -189,6 +189,76 @@ describe('Motor Procedural NY Facade Studio (Etapa 2.4)', () => {
     expect(svg).toContain('stroke-width="6"');
   });
 
+  it('aplica textura de tijolos/pedra e pingadeira em todos os 5 estilos de ameias', () => {
+    const baseState = createDefaultState();
+    baseState.building.wallPattern = 'bricks_detailed';
+
+    (['classic', 'stepped', 'arched', 'pediment', 'balustrade'] as const).forEach((style) => {
+      const state = {
+        ...baseState,
+        building: { ...baseState.building, battlementsStyle: style }
+      };
+      const layout = computeFacadeLayout(state.building, false);
+      const svg = renderFacadeSVG(layout, state, { cleanExport: true });
+
+      expect(svg).toContain(`data-battlements-style="${style}"`);
+      expect(svg).toContain('id="roofBattlementsClip"');
+      expect(svg).toContain('fill="url(#wallBrickPattern)"');
+      expect(svg).toContain('class="roof-brick-clusters"');
+      expect(svg).toContain('class="roof-coping"');
+
+      if (style === 'balustrade') {
+        expect(svg).toContain('class="balustrade-opening"');
+      }
+      if (style === 'pediment') {
+        expect(svg).toContain('class="pediment-oculus"');
+      }
+    });
+
+    const ashlarState = {
+      ...baseState,
+      building: {
+        ...baseState.building,
+        wallPattern: 'stone_ashlar' as const,
+        battlementsStyle: 'arched' as const
+      }
+    };
+    const ashlarSvg = renderFacadeSVG(
+      computeFacadeLayout(ashlarState.building, false),
+      ashlarState,
+      { cleanExport: true }
+    );
+    expect(ashlarSvg).toContain('fill="url(#wallStonePattern)"');
+  });
+
+  it('ajusta espessura vertical e alinhamento lateral rente das cornijas', () => {
+    const thinState = createDefaultState();
+    thinState.building.corniceHeight = 20;
+    thinState.building.corniceFlush = true;
+
+    const thinLayout = computeFacadeLayout(thinState.building, false);
+    const thinCornice = thinLayout.sections.find((s) => s.type === 'cornice')!;
+    if (thinCornice.type !== 'cornice') throw new Error('Esperada seção cornice');
+
+    expect(thinCornice.height).toBe(20);
+    expect(thinCornice.mainHeight + thinCornice.friezeHeight).toBe(20);
+    expect(thinLayout.corniceWidth).toBe(thinLayout.bodyWidth);
+    expect(thinLayout.bounds.corniceX).toBe(thinLayout.bounds.bodyX);
+
+    const thinSvg = renderFacadeSVG(thinLayout, thinState, { cleanExport: true });
+    expect(thinSvg).toContain('rx="0" ry="0"');
+
+    const thickState = createDefaultState();
+    thickState.building.corniceHeight = 52;
+    const thickLayout = computeFacadeLayout(thickState.building, false);
+    const thickCornice = thickLayout.sections.find((s) => s.type === 'cornice')!;
+    if (thickCornice.type !== 'cornice') throw new Error('Esperada seção cornice');
+
+    expect(thickCornice.height).toBe(52);
+    // 4 cornijas (topo, ático, tipo 2, tipo 1): diferença total = 4 * (52 - 20) = 128u
+    expect(thickLayout.totalHeight - thinLayout.totalHeight).toBe(128);
+  });
+
   it('expõe documentação completa para todas as 16 seções de funcionalidades', () => {
     expect(FEATURE_DOCS.length).toBe(16);
     FEATURE_DOCS.forEach((doc) => {

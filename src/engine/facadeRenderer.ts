@@ -1,13 +1,13 @@
 import type { DoorModule, FacadeLayout, FacadeState, WindowModule } from '../types/facade';
 import { escapeXml, r2 } from './colorUtils';
 import { renderDoorModule } from './doorRenderer';
-import { buildBattlementsPath } from './facadeLayout';
 import {
   renderCorniceDetails,
   renderEntranceStairs,
   renderFireEscape,
   renderFloorWallDetails,
   renderFooterGarden,
+  renderRoofBattlements,
   renderWallPatternDefs
 } from './structuralDetailsRenderer';
 import { renderWindowModule } from './windowRenderer';
@@ -84,11 +84,12 @@ export function renderFacadeSVG(
 
   const roof = layout.sections.find((s) => s.type === 'roof_battlements');
   if (roof && roof.type === 'roof_battlements') {
-    bodyParts.push(
-      `<path id="roof-battlements" d="${buildBattlementsPath(roof)}" fill="${pal.wall}" stroke="${pal.stroke}" stroke-width="${sw}" />`
-    );
+    const renderedRoof = renderRoofBattlements(roof, state.building, sw, elSw);
+    if (renderedRoof.defs) defsArr.push(renderedRoof.defs);
+    bodyParts.push(renderedRoof.markup);
   }
 
+  const corniceRx = state.building.corniceFlush ? 0 : 3;
   layout.sections.forEach((sec) => {
     if (sec.type === 'cornice') {
       const friezeY = sec.y + sec.mainHeight;
@@ -96,7 +97,7 @@ export function renderFacadeSVG(
         <g id="${sec.id}">
           <rect x="${sec.bodyX}" y="${friezeY}" width="${sec.bodyWidth}" height="${sec.friezeHeight}" fill="${pal.corniceFrieze}" stroke="${pal.stroke}" stroke-width="${sw}" />
           ${renderCorniceDetails(sec, state.building, elSw)}
-          <rect x="${sec.x}" y="${sec.y}" width="${sec.width}" height="${sec.mainHeight}" rx="3" ry="3" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${sw}" />
+          <rect x="${sec.x}" y="${sec.y}" width="${sec.width}" height="${sec.mainHeight}" rx="${corniceRx}" ry="${corniceRx}" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${sw}" />
         </g>
       `);
     }

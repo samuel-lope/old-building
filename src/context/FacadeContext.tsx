@@ -70,6 +70,9 @@ function loadState(): FacadeState {
         groundDoorCount,
         doorSide,
         columnBandsMode,
+        battlementsStyle: parsed.building.battlementsStyle || 'classic',
+        corniceHeight: Math.max(16, Math.min(56, parsed.building.corniceHeight ?? 38)),
+        corniceFlush: Boolean(parsed.building.corniceFlush),
         groundShopMode: parsed.building.groundShopMode || 'double',
         shopFitMode: parsed.building.shopFitMode || 'fill',
         colors: { ...def.building.colors, ...(parsed.building.colors || {}) }
@@ -581,6 +584,9 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
           building: {
             ...def.building,
             ...parsed.building,
+            battlementsStyle: parsed.building?.battlementsStyle || def.building.battlementsStyle,
+            corniceHeight: Math.max(16, Math.min(56, parsed.building?.corniceHeight ?? def.building.corniceHeight)),
+            corniceFlush: Boolean(parsed.building?.corniceFlush),
             colors: { ...def.building.colors, ...(parsed.building?.colors || {}) }
           },
           windowLibrary: parsed.windowLibrary!,

@@ -6,9 +6,11 @@ import type {
   FacadeSlot,
   GroundSection,
   Rect,
+  RoofSection,
   TypicalSection
 } from '../types/facade';
 import { darkenHex, r2 } from './colorUtils';
+import { buildBattlementsPath, computeBattlementsGeometry } from './facadeLayout';
 
 /**
  * Gera <pattern> de textura de parede (tijolos ou blocos de cantaria).
@@ -167,7 +169,150 @@ export function renderFloorWallDetails(
 }
 
 /**
- * Renderiza dentículos ou mísulas clássicas no friso das cornijas.
+ * Renderiza a cobertura com ameias aplicando a textura de parede selecionada,
+ * detalhes internos do estilo (balaustrada/óculo) e pingadeira superior em pedra.
+ */
+export function renderRoofBattlements(
+  roof: RoofSection,
+  building: BuildingConfig,
+  strokeW: number,
+  elStrokeW: number
+): { defs: string; markup: string } {
+  const pal = building.colors;
+  const d = buildBattlementsPath(roof);
+  const geom = computeBattlementsGeometry(roof);
+  const elLineW = r2(Math.max(0.85, elStrokeW * 0.72));
+  const copeSw = r2(Math.max(1.0, elStrokeW * 0.78));
+
+  const defs = `<clipPath id="roofBattlementsClip"><path d="${d}" /></clipPath>`;
+  const parts: string[] = [
+    `<g id="roof-battlements-group" data-battlements-style="${geom.style}">`
+  ];
+
+  // 1. Preenchimento base da alvenaria
+  parts.push(`<path d="${d}" fill="${pal.wall}" stroke="none" />`);
+
+  // 2. Textura herdada da configuração das paredes da edificação
+  if (building.wallPattern === 'bricks_classic' || building.wallPattern === 'bricks_detailed') {
+    parts.push(`<path d="${d}" fill="url(#wallBrickPattern)" stroke="none" />`);
+    if (building.wallPattern === 'bricks_detailed') {
+      const brickAccent = darkenHex(pal.wall, 0.16);
+      const yRow1 = r2(roof.y + roof.height * 0.34);
+      const yRow2 = r2(roof.y + roof.height * 0.64);
+      const brickClusters: string[] = [];
+      for (let bx = roof.x + 10; bx + 24 <= roof.x + roof.width - 10; bx += 54) {
+        brickClusters.push(
+          `<rect x="${r2(bx)}" y="${yRow1}" width="11" height="5.5" rx="0.5" />`,
+          `<rect x="${r2(bx + 18)}" y="${yRow2}" width="11" height="5.5" rx="0.5" />`,
+          `<rect x="${r2(bx + 6)}" y="${yRow2}" width="11" height="5.5" rx="0.5" />`
+        );
+      }
+      parts.push(
+        `<g class="roof-brick-clusters" clip-path="url(#roofBattlementsClip)" fill="${brickAccent}" opacity="0.35" stroke="none">${brickClusters.join('')}</g>`
+      );
+    }
+  } else if (building.wallPattern === 'stone_ashlar') {
+    parts.push(`<path d="${d}" fill="url(#wallStonePattern)" stroke="none" />`);
+  }
+
+  // 3. Detalhes arquitetônicos internos específicos por estilo
+  if (geom.style === 'balustrade' && geom.bays.length > 0) {
+    geom.bays.forEach((bay) => {
+      const openX = r2(bay.x + 2.5);
+      const openW = r2(Math.max(8, bay.width - 5));
+      parts.push(
+        `<rect class="balustrade-opening" x="${openX}" y="${r2(bay.openY)}" width="${openW}" height="${r2(bay.openHeight)}" rx="1" fill="${pal.wallShadow}" stroke="${pal.stroke}" stroke-width="${elLineW}" />`
+      );
+      const balStep = 7.5;
+      const balW = 3.2;
+      for (let bx = openX + 4; bx + balW <= openX + openW - 3.5; bx += balStep) {
+        parts.push(
+          `<rect x="${r2(bx)}" y="${r2(bay.openY + 0.8)}" width="${balW}" height="${r2(Math.max(4, bay.openHeight - 1.6))}" rx="0.8" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${r2(Math.max(0.7, elLineW * 0.72))}" />`
+        );
+      }
+    });
+  } else if (geom.style === 'pediment' && geom.pediment) {
+    const ped = geom.pediment;
+    parts.push(
+      `<g class="pediment-oculus">
+        <circle cx="${r2(ped.oculusCx)}" cy="${r2(ped.oculusCy)}" r="7.5" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${elLineW}" />
+        <circle cx="${r2(ped.oculusCx)}" cy="${r2(ped.oculusCy)}" r="3.8" fill="${pal.corniceFrieze}" stroke="${pal.stroke}" stroke-width="${r2(Math.max(0.7, elLineW * 0.7))}" />
+      </g>`
+    );
+  }
+
+  // 4. Contorno estrutural principal da cobertura
+  parts.push(
+    `<path id="roof-battlements" d="${d}" fill="none" stroke="${pal.stroke}" stroke-width="${strokeW}" />`
+  );
+
+  // 5. Pingadeira superior em pedra (coping)
+  const copingParts: string[] = [`<g class="roof-coping">`];
+
+  if (geom.style === 'stepped') {
+    geom.merlons.forEach((m) => {
+      const sw = m.shoulderW ?? 0;
+      const sy = m.stepY ?? m.topY;
+      copingParts.push(
+        `<rect x="${r2(m.x0 - 1)}" y="${r2(sy - 1.8)}" width="${r2(sw + 1.5)}" height="3.8" rx="0.6" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`,
+        `<rect x="${r2(m.x0 + sw - 1.2)}" y="${r2(m.topY - 2.2)}" width="${r2(Math.max(4, m.x1 - m.x0 - sw * 2 + 2.4))}" height="4.2" rx="0.7" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`,
+        `<rect x="${r2(m.x1 - sw - 0.5)}" y="${r2(sy - 1.8)}" width="${r2(sw + 1.5)}" height="3.8" rx="0.6" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`
+      );
+    });
+  } else if (geom.style === 'arched') {
+    geom.merlons.forEach((m) => {
+      const springY = m.archSpringY ?? m.topY;
+      const ctrlY = m.archCtrlY ?? m.topY;
+      const midX = (m.x0 + m.x1) / 2;
+      const archPath = `M ${r2(m.x0 - 0.5)} ${r2(springY)} Q ${r2(midX)} ${r2(ctrlY)} ${r2(m.x1 + 0.5)} ${r2(springY)}`;
+      copingParts.push(
+        `<path d="${archPath}" fill="none" stroke="${pal.stroke}" stroke-width="${r2(4.4 + copeSw * 1.4)}" stroke-linecap="round" />`,
+        `<path d="${archPath}" fill="none" stroke="${pal.cornice}" stroke-width="3" stroke-linecap="round" />`
+      );
+    });
+  } else if (geom.style === 'balustrade') {
+    geom.bays.forEach((bay) => {
+      copingParts.push(
+        `<rect x="${r2(bay.x - 0.4)}" y="${r2(bay.railTopY - 1.6)}" width="${r2(bay.width + 0.8)}" height="4.2" rx="0.6" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`
+      );
+    });
+    geom.merlons.forEach((m) => {
+      copingParts.push(
+        `<rect x="${r2(m.x0 - 1.5)}" y="${r2(m.topY - 2.2)}" width="${r2(m.x1 - m.x0 + 3)}" height="4.6" rx="0.8" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`
+      );
+    });
+  } else {
+    geom.merlons.forEach((m) => {
+      copingParts.push(
+        `<rect x="${r2(m.x0 - 1.2)}" y="${r2(m.topY - 2)}" width="${r2(m.x1 - m.x0 + 2.4)}" height="4.2" rx="0.7" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`
+      );
+    });
+  }
+
+  geom.notches.forEach((nt) => {
+    copingParts.push(
+      `<rect x="${r2(nt.x0 + 0.5)}" y="${r2(nt.lowY - 1.8)}" width="${r2(Math.max(3, nt.x1 - nt.x0 - 1))}" height="3.2" rx="0.5" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${copeSw}" />`
+    );
+  });
+
+  if (geom.style === 'pediment' && geom.pediment) {
+    const ped = geom.pediment;
+    const rakePath = `M ${r2(ped.leftX - 2)} ${r2(ped.eaveY + 0.4)} L ${r2(ped.midX)} ${r2(ped.apexY)} L ${r2(ped.rightX + 2)} ${r2(ped.eaveY + 0.4)}`;
+    copingParts.push(
+      `<path d="${rakePath}" fill="none" stroke="${pal.stroke}" stroke-width="${r2(4.6 + copeSw * 1.4)}" stroke-linejoin="miter" stroke-linecap="round" />`,
+      `<path d="${rakePath}" fill="none" stroke="${pal.cornice}" stroke-width="3.2" stroke-linejoin="miter" stroke-linecap="round" />`
+    );
+  }
+
+  copingParts.push(`</g>`);
+  parts.push(copingParts.join('\n'));
+  parts.push(`</g>`);
+
+  return { defs, markup: parts.join('\n') };
+}
+
+/**
+ * Renderiza dentículos ou mísulas clássicas no friso das cornijas (escaláveis com corniceHeight).
  */
 export function renderCorniceDetails(
   sec: CorniceSection,
@@ -181,18 +326,19 @@ export function renderCorniceDetails(
   const parts: string[] = [`<g class="cornice-ornaments">`];
 
   if (building.corniceStyle === 'dentils') {
-    const dw = 5;
-    const step = 9.5;
-    const dh = Math.max(4, sec.friezeHeight - 4);
+    const dh = r2(Math.max(3, sec.friezeHeight - 3.5));
+    const dw = r2(Math.max(4, Math.min(7, sec.friezeHeight * 0.42)));
+    const step = r2(dw * 1.9);
+    const dy = r2(friezeY + Math.max(1.0, (sec.friezeHeight - dh) / 2));
     for (let x = sec.bodyX + 5; x + dw <= sec.bodyX + sec.bodyWidth - 5; x += step) {
       parts.push(
-        `<rect x="${r2(x)}" y="${r2(friezeY + 2)}" width="${dw}" height="${dh}" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${strokeW}" />`
+        `<rect x="${r2(x)}" y="${dy}" width="${dw}" height="${dh}" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${strokeW}" />`
       );
     }
   } else if (building.corniceStyle === 'modillions') {
-    const mw = 8.5;
-    const step = 20;
-    const mh = sec.friezeHeight + 2;
+    const mh = r2(Math.max(5, sec.friezeHeight + 1.5));
+    const mw = r2(Math.max(6.5, Math.min(11, sec.friezeHeight * 0.72)));
+    const step = r2(Math.max(15, mw * 2.3));
     for (let x = sec.bodyX + 7; x + mw <= sec.bodyX + sec.bodyWidth - 7; x += step) {
       parts.push(
         `<rect x="${r2(x)}" y="${r2(friezeY - 1)}" width="${mw}" height="${mh}" rx="1" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${r2(strokeW * 1.1)}" />`

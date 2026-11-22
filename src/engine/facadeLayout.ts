@@ -1,4 +1,5 @@
 import type {
+  BattlementsStyle,
   BuildingConfig,
   ElevationLevel,
   FacadeLayout,
@@ -109,10 +110,11 @@ export function computeFacadeLayout(
 ): FacadeLayout {
   const STROKE_W = building.buildingStrokeWidth || 5.0;
   const EL_STROKE_W = building.elementStrokeWidth || 2.4;
-  const CORNICE_OVERHANG = 10;
-  const CORNICE_MAIN_H = 26;
-  const CORNICE_FRIEZE_H = 12;
-  const CORNICE_TOTAL_H = CORNICE_MAIN_H + CORNICE_FRIEZE_H;
+  const CORNICE_OVERHANG = building.corniceFlush ? 0 : 10;
+  const totalCorniceH = Math.max(16, Math.min(56, building.corniceHeight ?? 38));
+  const CORNICE_FRIEZE_H = Math.max(5, Math.round(totalCorniceH * (12 / 38)));
+  const CORNICE_MAIN_H = totalCorniceH - CORNICE_FRIEZE_H;
+  const CORNICE_TOTAL_H = totalCorniceH;
   const SHADOW_BAND_H = 11;
 
   const ROOF_H = 38;
@@ -151,7 +153,8 @@ export function computeFacadeLayout(
     width: bodyW,
     height: ROOF_H,
     notchDepth: ROOF_NOTCH,
-    battlementsCount: building.battlementsCount
+    battlementsCount: building.battlementsCount,
+    battlementsStyle: building.battlementsStyle || 'classic'
   });
   cursorY += ROOF_H;
 
@@ -469,28 +472,279 @@ export function computeFacadeLayout(
   };
 }
 
-export function buildBattlementsPath(sec: RoofSection): string {
-  const { x, y, width, height, notchDepth, battlementsCount } = sec;
-  const n = battlementsCount;
-  const gaps = n - 1;
-  const unitW = width / (n + gaps * 1.12);
-  const merlonW = unitW;
-  const notchW = unitW * 1.12;
+export interface BattlementMerlonSpan {
+  x0: number;
+  x1: number;
+  topY: number;
+  shoulderW?: number;
+  stepY?: number;
+  archSpringY?: number;
+  archCtrlY?: number;
+}
+
+export interface BattlementNotchSpan {
+  x0: number;
+  x1: number;
+  lowY: number;
+}
+
+export interface BalustradeBay {
+  x: number;
+  width: number;
+  railTopY: number;
+  openY: number;
+  openHeight: number;
+}
+
+export interface PedimentGeometry {
+  leftX: number;
+  midX: number;
+  rightX: number;
+  eaveY: number;
+  apexY: number;
+  oculusCx: number;
+  oculusCy: number;
+}
+
+export interface BattlementsGeometry {
+  style: BattlementsStyle;
+  baseY: number;
+  topY: number;
+  lowY: number;
+  merlons: BattlementMerlonSpan[];
+  notches: BattlementNotchSpan[];
+  pediment: PedimentGeometry | null;
+  bays: BalustradeBay[];
+}
+
+export function computeBattlementsGeometry(sec: RoofSection): BattlementsGeometry {
+  const { x, y, width, height, notchDepth } = sec;
+  const n = Math.max(2, Math.min(6, sec.battlementsCount || 4));
+  const style: BattlementsStyle = sec.battlementsStyle || 'classic';
   const baseY = y + height;
   const topY = y;
   const lowY = y + notchDepth;
 
-  let d = `M ${r2(x)} ${r2(baseY)} L ${r2(x)} ${r2(topY)}`;
+  const merlons: BattlementMerlonSpan[] = [];
+  const notches: BattlementNotchSpan[] = [];
+  const bays: BalustradeBay[] = [];
+  let pediment: PedimentGeometry | null = null;
+
+  if (style === 'pediment') {
+    const midX = x + width / 2;
+    const pedW = width * 0.42;
+    const pedLeft = midX - pedW / 2;
+    const pedRight = midX + pedW / 2;
+    const eaveY = y + notchDepth * 0.72;
+    const sideTopY = y + notchDepth * 0.35;
+    const sideCount = Math.max(1, Math.floor(n / 2));
+    const wingW = (width - pedW) / 2;
+    const wingUnit = wingW / (sideCount + sideCount * 0.9);
+    const sMerlonW = wingUnit;
+    const sNotchW = wingUnit * 0.9;
+
+    pediment = {
+      leftX: pedLeft,
+      midX,
+      rightX: pedRight,
+      eaveY,
+      apexY: topY,
+      oculusCx: midX,
+      oculusCy: y + height * 0.56
+    };
+
+    let lx = x;
+    for (let j = 0; j < sideCount; j++) {
+      const mx0 = lx;
+      const mx1 = lx + sMerlonW;
+      merlons.push({ x0: mx0, x1: mx1, topY: sideTopY });
+      const nx1 = j === sideCount - 1 ? pedLeft : mx1 + sNotchW;
+      notches.push({ x0: mx1, x1: nx1, lowY });
+      lx = nx1;
+    }
+
+    let rx = pedRight;
+    for (let j = 0; j < sideCount; j++) {
+      const nx0 = rx;
+      const nx1 = nx0 + sNotchW;
+      notches.push({ x0: nx0, x1: nx1, lowY });
+      const mx1 = j === sideCount - 1 ? x + width : nx1 + sMerlonW;
+      merlons.push({ x0: nx1, x1: mx1, topY: sideTopY });
+      rx = mx1;
+    }
+
+    return { style, baseY, topY, lowY, merlons, notches, pediment, bays };
+  }
+
+  if (style === 'balustrade') {
+    const pierW = Math.max(14, Math.min(26, width / (n * 2.3)));
+    const gaps = n - 1;
+    const bayW = (width - n * pierW) / gaps;
+    const railTopY = y + 5;
+    const openY = railTopY + 5;
+    const openHeight = Math.max(8, height - 18);
+
+    for (let i = 0; i < n; i++) {
+      const px0 = x + i * (pierW + bayW);
+      const px1 = i === n - 1 ? x + width : px0 + pierW;
+      merlons.push({ x0: px0, x1: px1, topY });
+      if (i < gaps) {
+        const bx = px1;
+        const nextPx = x + (i + 1) * (pierW + bayW);
+        bays.push({
+          x: bx,
+          width: nextPx - bx,
+          railTopY,
+          openY,
+          openHeight
+        });
+      }
+    }
+
+    return { style, baseY, topY, lowY, merlons, notches, pediment, bays };
+  }
+
+  const gaps = n - 1;
+  const unitW = width / (n + gaps * 1.12);
+  const merlonW = unitW;
+  const notchW = unitW * 1.12;
+
   let cx = x;
   for (let i = 0; i < n; i++) {
-    cx += merlonW;
-    if (i === n - 1) cx = x + width;
-    d += ` L ${r2(cx)} ${r2(topY)}`;
+    const mx0 = cx;
+    const mx1 = i === n - 1 ? x + width : cx + merlonW;
+    const mw = mx1 - mx0;
+
+    if (style === 'stepped') {
+      merlons.push({
+        x0: mx0,
+        x1: mx1,
+        topY,
+        shoulderW: mw * 0.24,
+        stepY: y + notchDepth * 0.45
+      });
+    } else if (style === 'arched') {
+      const archSpringY = y + Math.min(11, Math.max(6, mw * 0.3));
+      const archCtrlY = 2 * topY - archSpringY;
+      merlons.push({
+        x0: mx0,
+        x1: mx1,
+        topY,
+        archSpringY,
+        archCtrlY
+      });
+    } else {
+      merlons.push({ x0: mx0, x1: mx1, topY });
+    }
+
+    cx = mx1;
     if (i < n - 1) {
-      d += ` L ${r2(cx)} ${r2(lowY)}`;
-      cx += notchW;
-      d += ` L ${r2(cx)} ${r2(lowY)}`;
-      d += ` L ${r2(cx)} ${r2(topY)}`;
+      const nx0 = cx;
+      const nx1 = cx + notchW;
+      notches.push({ x0: nx0, x1: nx1, lowY });
+      cx = nx1;
+    }
+  }
+
+  return { style, baseY, topY, lowY, merlons, notches, pediment, bays };
+}
+
+export function buildBattlementsPath(sec: RoofSection): string {
+  const geom = computeBattlementsGeometry(sec);
+  const { style, baseY, topY, lowY, merlons, notches, pediment, bays } = geom;
+  const { x, width } = sec;
+
+  if (style === 'pediment' && pediment) {
+    const half = Math.floor(merlons.length / 2);
+    const leftMerlons = merlons.slice(0, half);
+    const leftNotches = notches.slice(0, half);
+    const rightNotches = notches.slice(half);
+    const rightMerlons = merlons.slice(half);
+
+    let d = `M ${r2(x)} ${r2(baseY)} L ${r2(x)} ${r2(leftMerlons[0].topY)}`;
+    for (let j = 0; j < leftMerlons.length; j++) {
+      const m = leftMerlons[j];
+      const nt = leftNotches[j];
+      d += ` L ${r2(m.x1)} ${r2(m.topY)} L ${r2(nt.x0)} ${r2(nt.lowY)} L ${r2(nt.x1)} ${r2(nt.lowY)}`;
+      if (j < leftMerlons.length - 1) {
+        d += ` L ${r2(leftMerlons[j + 1].x0)} ${r2(leftMerlons[j + 1].topY)}`;
+      }
+    }
+
+    d += ` L ${r2(pediment.leftX)} ${r2(pediment.eaveY)} L ${r2(pediment.midX)} ${r2(pediment.apexY)} L ${r2(pediment.rightX)} ${r2(pediment.eaveY)} L ${r2(pediment.rightX)} ${r2(lowY)}`;
+
+    for (let j = 0; j < rightMerlons.length; j++) {
+      const nt = rightNotches[j];
+      const m = rightMerlons[j];
+      d += ` L ${r2(nt.x1)} ${r2(nt.lowY)} L ${r2(m.x0)} ${r2(m.topY)} L ${r2(m.x1)} ${r2(m.topY)}`;
+      if (j < rightMerlons.length - 1) {
+        d += ` L ${r2(m.x1)} ${r2(lowY)}`;
+      }
+    }
+
+    d += ` L ${r2(x + width)} ${r2(baseY)} Z`;
+    return d;
+  }
+
+  if (style === 'balustrade') {
+    let d = `M ${r2(x)} ${r2(baseY)} L ${r2(x)} ${r2(topY)}`;
+    for (let i = 0; i < merlons.length; i++) {
+      const m = merlons[i];
+      d += ` L ${r2(m.x1)} ${r2(topY)}`;
+      if (i < bays.length) {
+        const bay = bays[i];
+        d += ` L ${r2(bay.x)} ${r2(bay.railTopY)} L ${r2(bay.x + bay.width)} ${r2(bay.railTopY)} L ${r2(merlons[i + 1].x0)} ${r2(topY)}`;
+      }
+    }
+    d += ` L ${r2(x + width)} ${r2(baseY)} Z`;
+    return d;
+  }
+
+  if (style === 'stepped') {
+    const firstStepY = merlons[0].stepY ?? topY;
+    let d = `M ${r2(x)} ${r2(baseY)} L ${r2(x)} ${r2(firstStepY)}`;
+    for (let i = 0; i < merlons.length; i++) {
+      const m = merlons[i];
+      const sw = m.shoulderW ?? 0;
+      const sy = m.stepY ?? topY;
+      d += ` L ${r2(m.x0 + sw)} ${r2(sy)} L ${r2(m.x0 + sw)} ${r2(m.topY)} L ${r2(m.x1 - sw)} ${r2(m.topY)} L ${r2(m.x1 - sw)} ${r2(sy)} L ${r2(m.x1)} ${r2(sy)}`;
+      if (i < notches.length) {
+        const nt = notches[i];
+        const nextSy = merlons[i + 1].stepY ?? topY;
+        d += ` L ${r2(nt.x0)} ${r2(nt.lowY)} L ${r2(nt.x1)} ${r2(nt.lowY)} L ${r2(nt.x1)} ${r2(nextSy)}`;
+      }
+    }
+    d += ` L ${r2(x + width)} ${r2(baseY)} Z`;
+    return d;
+  }
+
+  if (style === 'arched') {
+    const firstSpring = merlons[0].archSpringY ?? topY;
+    let d = `M ${r2(x)} ${r2(baseY)} L ${r2(x)} ${r2(firstSpring)}`;
+    for (let i = 0; i < merlons.length; i++) {
+      const m = merlons[i];
+      const springY = m.archSpringY ?? topY;
+      const ctrlY = m.archCtrlY ?? topY;
+      const midX = (m.x0 + m.x1) / 2;
+      d += ` Q ${r2(midX)} ${r2(ctrlY)} ${r2(m.x1)} ${r2(springY)}`;
+      if (i < notches.length) {
+        const nt = notches[i];
+        const nextSpring = merlons[i + 1].archSpringY ?? topY;
+        d += ` L ${r2(nt.x0)} ${r2(nt.lowY)} L ${r2(nt.x1)} ${r2(nt.lowY)} L ${r2(nt.x1)} ${r2(nextSpring)}`;
+      }
+    }
+    d += ` L ${r2(x + width)} ${r2(baseY)} Z`;
+    return d;
+  }
+
+  // 'classic'
+  let d = `M ${r2(x)} ${r2(baseY)} L ${r2(x)} ${r2(topY)}`;
+  for (let i = 0; i < merlons.length; i++) {
+    const m = merlons[i];
+    d += ` L ${r2(m.x1)} ${r2(m.topY)}`;
+    if (i < notches.length) {
+      const nt = notches[i];
+      d += ` L ${r2(nt.x0)} ${r2(nt.lowY)} L ${r2(nt.x1)} ${r2(nt.lowY)} L ${r2(merlons[i + 1].x0)} ${r2(merlons[i + 1].topY)}`;
     }
   }
   d += ` L ${r2(x + width)} ${r2(baseY)} Z`;

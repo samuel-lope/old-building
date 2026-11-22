@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BUILDING_PALETTES } from '../../constants/defaults';
 import { useFacade } from '../../context/FacadeContext';
 import type {
+  BattlementsStyle,
   BuildingColors,
   ColumnBandsMode,
   CorniceStyle,
@@ -125,6 +126,24 @@ export function StructureTab() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="field">
+          <label className="field-label" htmlFor="selBattlementsStyle">
+            Tipo de Ameias (Cobertura)
+          </label>
+          <select
+            id="selBattlementsStyle"
+            className="select-input"
+            value={b.battlementsStyle || 'classic'}
+            onChange={(e) => updateBuilding({ battlementsStyle: e.target.value as BattlementsStyle })}
+          >
+            <option value="classic">Clássica Retangular</option>
+            <option value="stepped">Escalonada (Stepped)</option>
+            <option value="arched">Arqueada (Românica)</option>
+            <option value="pediment">Frontão Central NY</option>
+            <option value="balustrade">Platibanda c/ Balaustrada</option>
+          </select>
         </div>
       </div>
 
@@ -252,6 +271,46 @@ export function StructureTab() {
                 {opt.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <div className="field-row">
+            <label className="field-label" htmlFor="inpCorniceHeight">
+              Espessura Vertical das Cornijas
+            </label>
+            <span id="valCorniceHeight" className="mono-val">
+              {b.corniceHeight ?? 38}u
+            </span>
+          </div>
+          <input
+            id="inpCorniceHeight"
+            type="range"
+            min={16}
+            max={56}
+            step={2}
+            value={b.corniceHeight ?? 38}
+            onChange={(e) => updateBuilding({ corniceHeight: parseInt(e.target.value, 10) })}
+          />
+        </div>
+
+        <div className="field">
+          <span className="field-label">Alinhamento Lateral das Cornijas</span>
+          <div id="grpCorniceAlign" className="seg-group seg-2">
+            <button
+              type="button"
+              className={`seg-btn ${!b.corniceFlush ? 'active' : ''}`}
+              onClick={() => updateBuilding({ corniceFlush: false })}
+            >
+              Com Balanço (+10u)
+            </button>
+            <button
+              type="button"
+              className={`seg-btn ${b.corniceFlush ? 'active' : ''}`}
+              onClick={() => updateBuilding({ corniceFlush: true })}
+            >
+              Rente à Fachada (0u)
+            </button>
           </div>
         </div>
 

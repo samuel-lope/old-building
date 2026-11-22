@@ -16,6 +16,7 @@ export type DoorHandleStyle = 'knob_classic' | 'handle_vertical' | 'none';
 export type DoorThresholdType = 'none' | 'sill_stone' | 'double_step';
 
 export type WallPatternType = 'none' | 'bricks_classic' | 'bricks_detailed' | 'stone_ashlar';
+export type BattlementsStyle = 'classic' | 'stepped' | 'arched' | 'pediment' | 'balustrade';
 export type ColumnBandsMode = 'none' | 'center' | 'edges' | 'all_bays';
 export type CorniceStyle = 'classic' | 'dentils' | 'modillions';
 export type GardenStyle = 'iron_rail_hedges' | 'planter_box' | 'flower_bed';
@@ -46,6 +47,7 @@ export interface BuildingConfig {
   typicalFloors: number;
   typicalSlotsCount: number;
   battlementsCount: number;
+  battlementsStyle: BattlementsStyle;
   hasAttic: boolean;
   hasCenterBand: boolean;
   hasPlinth: boolean;
@@ -59,6 +61,8 @@ export interface BuildingConfig {
   hasQuoins: boolean;
   columnBandsMode: ColumnBandsMode;
   corniceStyle: CorniceStyle;
+  corniceHeight: number;
+  corniceFlush: boolean;
   hasFooterGarden: boolean;
   gardenStyle: GardenStyle;
   hasEntranceStairs: boolean;
@@ -172,6 +176,7 @@ export interface RoofSection extends Rect {
   label: string;
   notchDepth: number;
   battlementsCount: number;
+  battlementsStyle: BattlementsStyle;
 }
 
 export interface CorniceSection {
