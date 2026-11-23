@@ -19,6 +19,13 @@ export type WallPatternType = 'none' | 'bricks_classic' | 'bricks_detailed' | 's
 export type BattlementsStyle = 'classic' | 'stepped' | 'arched' | 'pediment' | 'balustrade';
 export type ColumnBandsMode = 'none' | 'center' | 'edges' | 'all_bays';
 export type CorniceStyle = 'classic' | 'dentils' | 'modillions';
+export type PlinthStyle =
+  | 'classic_panel'
+  | 'rusticated_ashlar'
+  | 'molded_wood'
+  | 'granite_vented';
+export type AwningPlacement = 'full' | 'door_only' | 'shop_only';
+export type AwningStyle = 'striped_classic' | 'solid_valance' | 'arched_canopy';
 export type GardenStyle = 'iron_rail_hedges' | 'planter_box' | 'flower_bed';
 export type EntranceStairsStyle = 'stoop_classic' | 'stoop_iron_rail' | 'wide_steps';
 export type FireEscapePlacement = 'left' | 'center' | 'right';
@@ -36,6 +43,7 @@ export interface BuildingColors {
   door: string;
   stroke: string;
   ironwork: string;
+  awning: string;
 }
 
 export interface BuildingPalette extends BuildingColors {
@@ -52,6 +60,7 @@ export interface BuildingConfig {
   hasAttic: boolean;
   hasCenterBand: boolean;
   hasPlinth: boolean;
+  plinthStyle: PlinthStyle;
   doorSide: DoorSide;
   groundDoorCount: GroundDoorCount;
   groundShopMode: GroundShopMode;
@@ -64,6 +73,9 @@ export interface BuildingConfig {
   corniceStyle: CorniceStyle;
   corniceHeight: number;
   corniceFlush: boolean;
+  hasAwning: boolean;
+  awningPlacement: AwningPlacement;
+  awningStyle: AwningStyle;
   hasFooterGarden: boolean;
   gardenStyle: GardenStyle;
   hasEntranceStairs: boolean;

@@ -28,7 +28,7 @@ export function Header() {
         <div className="brand">
           <div className="brand-mark">NY</div>
           <span className="brand-title">NY FACADE STUDIO</span>
-          <span className="brand-badge">ETAPA 2.6 — MOBILE 9:16 + AMEIAS &amp; CORNIJAS</span>
+          <span className="brand-badge">ETAPA 2.7 — EMBASAMENTOS &amp; TOLDO NO TÉRREO</span>
         </div>
 
         <div className="topbar-actions desktop-actions">

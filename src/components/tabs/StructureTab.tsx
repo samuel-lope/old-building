@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { BUILDING_PALETTES } from '../../constants/defaults';
 import { useFacade } from '../../context/FacadeContext';
 import type {
+  AwningPlacement,
+  AwningStyle,
   BattlementsStyle,
   BuildingColors,
   ColumnBandsMode,
@@ -9,6 +11,7 @@ import type {
   EntranceStairsStyle,
   FireEscapePlacement,
   GardenStyle,
+  PlinthStyle,
   WallPatternType
 } from '../../types/facade';
 import { HelpButton, HelpPopoverBody } from '../HelpPopover';
@@ -21,7 +24,8 @@ const COLOR_FIELDS: Array<{ key: keyof BuildingColors; label: string }> = [
   { key: 'corniceFrieze', label: 'Friso' },
   { key: 'plinthBand', label: 'Cantaria / Faixas' },
   { key: 'door', label: 'Porta Base' },
-  { key: 'ironwork', label: 'Ferro / Escada' }
+  { key: 'ironwork', label: 'Ferro / Escada' },
+  { key: 'awning', label: 'Toldo Térreo' }
 ];
 
 export function StructureTab() {
@@ -367,7 +371,7 @@ export function StructureTab() {
         <label className="toggle-row">
           <div>
             <div className="field-label">Embasamento no Térreo</div>
-            <div className="field-sub">Rodapé de cantaria sob a zona de vitrine</div>
+            <div className="field-sub">Rodapé arquitetônico sob a zona de vitrine</div>
           </div>
           <span className="switch">
             <input
@@ -379,6 +383,25 @@ export function StructureTab() {
             <span className="switch-track" />
           </span>
         </label>
+
+        {b.hasPlinth && (
+          <div className="field">
+            <label className="field-label" htmlFor="selPlinthStyle">
+              Modelo do Embasamento no Térreo
+            </label>
+            <select
+              id="selPlinthStyle"
+              className="select-input"
+              value={b.plinthStyle || 'classic_panel'}
+              onChange={(e) => updateBuilding({ plinthStyle: e.target.value as PlinthStyle })}
+            >
+              <option value="classic_panel">Painel Clássico Moldurado</option>
+              <option value="rusticated_ashlar">Cantaria Almofadada (Ashlar)</option>
+              <option value="molded_wood">Boiserie Comercial (Madeira)</option>
+              <option value="granite_vented">Granito c/ Grelhas de Ventilação</option>
+            </select>
+          </div>
+        )}
 
         <div className="field">
           <span className="field-label">Portas no Pavimento Térreo (até 1/3 cada)</span>
@@ -515,6 +538,72 @@ export function StructureTab() {
             docId="elementos-externos-fachada"
             onClose={() => setOpenHelp(null)}
           />
+        )}
+
+        <label className="toggle-row">
+          <div>
+            <div className="field-label">Toldo no Térreo (Abaixo da Cornija)</div>
+            <div className="field-sub">
+              Cobertura comercial alinhada abaixo da cornija do térreo
+            </div>
+          </div>
+          <span className="switch">
+            <input
+              id="chkAwning"
+              type="checkbox"
+              checked={b.hasAwning}
+              onChange={(e) => updateBuilding({ hasAwning: e.target.checked })}
+            />
+            <span className="switch-track" />
+          </span>
+        </label>
+
+        {b.hasAwning && (
+          <>
+            <div className="field">
+              <span className="field-label">Abrangência do Toldo</span>
+              <div id="grpAwningPlacement" className="seg-group seg-3">
+                {(
+                  [
+                    { val: 'full', label: 'Térreo Inteiro' },
+                    { val: 'door_only', label: 'Só Porta(s)' },
+                    { val: 'shop_only', label: 'Só Vitrine' }
+                  ] as Array<{ val: AwningPlacement; label: string }>
+                ).map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    className={`seg-btn ${b.awningPlacement === opt.val ? 'active' : ''}`}
+                    onClick={() => updateBuilding({ awningPlacement: opt.val })}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Estilo do Toldo</span>
+              <div id="grpAwningStyle" className="seg-group seg-3">
+                {(
+                  [
+                    { val: 'striped_classic', label: 'Listrado NY' },
+                    { val: 'solid_valance', label: 'Lona Sólida' },
+                    { val: 'arched_canopy', label: 'Marquise Curva' }
+                  ] as Array<{ val: AwningStyle; label: string }>
+                ).map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    className={`seg-btn ${b.awningStyle === opt.val ? 'active' : ''}`}
+                    onClick={() => updateBuilding({ awningStyle: opt.val })}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         <label className="toggle-row">

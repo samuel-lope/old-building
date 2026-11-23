@@ -38,13 +38,14 @@ O **NY Facade Studio** é um estúdio paramétrico e data-driven para composiç�
 | **Contorno Edificação / Elementos** | `2.0u–8.0u` / `1.0u–4.5u` | `5.0u` / `2.40u` | Separa a hierarquia de traço da massa construtiva e dos detalhes internos de janelas, portas e gradis. |
 | **Detalhamento das Paredes** | Lisa, Tijolos Clássicos, Tijolos Detalhados, Cantaria | `Tijolos Clássicos NY` | Aplica `<pattern>` de alvenaria, blocos acentuados nas paredes e nas ameias, cunhais (`hasQuoins`) e ornamento das cornijas. |
 | **Faixas de Colunas** | `Nenhuma`, `Central`, `Bordas`, `Entre Vãos` | `Entre Vãos` | Renderiza pilastras caneladas com base e capitel sem sobrepor os vãos de janela. |
+| **Toldo no Térreo** | `Térreo Inteiro`, `Só Porta(s)`, `Só Vitrine` · `Listrado NY`, `Lona Sólida`, `Marquise Curva` | `Só Vitrine · Listrado NY` | Fixado logo abaixo da cornija do térreo com saia ondulada, lona sólida ou marquise curva e cor `colors.awning`. |
 | **Jardim no Rodapé** | `Gradil + Sebes`, `Floreira Pedra`, `Canteiro Floral` | `Ligado` | Ocupa o rodapé sob a vitrine evitando `TERREO_PORTA`. |
 | **Escada na Porta (Stoop)** | `Stoop Pedra`, `Corrimão Ferro`, `Degraus Largos` | `Ligado` | Escadaria frontal ancorada sob `TERREO_PORTA`. |
 | **Escada de Incêndio** | `Esquerda`, `Centro`, `Direita` | `Desligado` | Varandas gradeadas por andar, mãos-francesas, ziguezague diagonal e drop ladder no térreo. |
 
 ### 3.2. Composição Estrutural & Regra de Terços no Térreo (`1. Estrutura`)
 - **Pavimento Ático**: Ativa/desativa o andar superior reduzido (`68u`) sincronizado com as prumadas dos pavimentos tipo e sua própria cornija inferior.
-- **Embasamento no Térreo**: Rodapé de `32u` de altura posicionado estritamente sob a área da vitrine (`shopArea`), sem sobrepor portas.
+- **Embasamento no Térreo (`4 Modelos`)**: Rodapé de `32u` sob `shopArea` selecionável entre `Painel Clássico Moldurado` (`classic_panel`), `Cantaria Almofadada` (`rusticated_ashlar`), `Boiserie Comercial` (`molded_wood`) e `Granito c/ Grelhas de Ventilação` (`granite_vented`).
 - **Portas no Térreo (Regra de `1/3` — Etapa 2.4)**:
   - `1 Porta`: `TERREO_PORTA` ocupa até `1/3` da largura útil do pavimento térreo (à esquerda ou à direita), restando `2/3` para `2 Vitrines` ou `1 Vitrine Ampla`.
   - `2 Portas + 1 Vitrine`: `TERREO_PORTA`, `TERREO_PORTA_2` e `gf-shop-single` dividem o térreo em `1/3 + 1/3 + 1/3`, com arranjo à esquerda (`2 Esq`), nas extremidades (`Extremidades`, com vitrine central) ou à direita (`2 Dir`).
@@ -54,7 +55,7 @@ O **NY Facade Studio** é um estúdio paramétrico e data-driven para composiç�
 
 ### 3.3. Paleta da Estrutura (`1. Estrutura`)
 - **4 Presets Arquitetônicos**: `Ocre NY Clássico`, `Terracota Tijolo`, `Pedra Calcária` e `Grafite Urbano`.
-- **7 Canais de Cor Independentes**: `wall`, `wallShadow`, `stroke`, `cornice`, `corniceFrieze`, `plinthBand`, `door`. Editar qualquer canal muda `paletteId` para `'custom'`.
+- **9 Canais de Cor Independentes**: `wall`, `wallShadow`, `stroke`, `cornice`, `corniceFrieze`, `plinthBand`, `door`, `ironwork`, `awning`. Editar qualquer canal muda `paletteId` para `'custom'`.
 
 ### 3.4. Preview Isolado & Biblioteca de Módulos (`2. Janelas`)
 - **Preview Isolado**: Renderiza o módulo selecionado em um slot virtual adaptativo (`136×86u` para proporções largas `aspectRatio > 1.15` ou `cols >= 4`; `88×106u` para janelas verticais) com contorno tracejado do vão.

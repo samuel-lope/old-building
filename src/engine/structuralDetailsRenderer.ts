@@ -678,11 +678,351 @@ export function renderFireEscape(
   parts.push(
     `<line x1="${r2(dropX + 8)}" y1="${dropTop}" x2="${r2(dropX + 8)}" y2="${dropBot}" stroke="${ironColor}" stroke-width="${strokeW}" />`
   );
-  for (let ry = dropTop + 6; ry <= dropBot - 4; ry += 8) {
+    for (let ry = dropTop + 6; ry <= dropBot - 4; ry += 8) {
+      parts.push(
+        `<line x1="${dropX}" y1="${r2(ry)}" x2="${r2(dropX + 8)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+      );
+    }
+
+  parts.push(`</g>`);
+  return parts.join('\n');
+}
+
+/**
+ * Renderiza estilos selecionáveis de Embasamento no rodapé do pavimento térreo.
+ */
+export function renderGroundPlinth(
+  sec: GroundSection,
+  building: BuildingConfig,
+  strokeW: number,
+  elStrokeW: number
+): string {
+  if (!sec.plinth) return '';
+  const pl = sec.plinth;
+  const pal = building.colors;
+  const style = building.plinthStyle || 'classic_panel';
+  const baseFill = pal.plinthBand || pal.cornice;
+  const trimFill = pal.corniceFrieze;
+  const capFill = pal.cornice;
+  const lineW = r2(Math.max(0.85, elStrokeW * 0.72));
+  const perimW = r2(Math.max(1.0, strokeW * 0.58));
+  const capH = 4.5;
+  const baseH = 4.0;
+
+  const panelsCount =
+    building.groundDoorCount === 2 || building.groundShopMode === 'single' ? 1 : 2;
+  const parts: string[] = [`<g id="ground-plinth" data-plinth-style="${style}">`];
+
+  parts.push(
+    `<rect x="${pl.x}" y="${pl.y}" width="${pl.width}" height="${pl.height}" fill="${baseFill}" stroke="none" />`
+  );
+
+  if (style === 'rusticated_ashlar') {
+    const startY = pl.y + capH + 1;
+    const availH = pl.height - capH - 2;
+    const rowH = availH / 2;
+    const usableW = pl.width - 4;
+    const cols = Math.max(2, Math.round(usableW / 28));
+    const blockW = usableW / cols;
+
+    for (let row = 0; row < 2; row++) {
+      const ry = r2(startY + row * rowH);
+      const bh = r2(Math.max(5, rowH - 1.5));
+      if (row === 0) {
+        for (let c = 0; c < cols; c++) {
+          const bx = r2(pl.x + 2 + c * blockW);
+          const bw = r2(Math.max(6, blockW - 1.5));
+          const bFill = c % 2 === 0 ? baseFill : trimFill;
+          parts.push(
+            `<rect x="${bx}" y="${ry}" width="${bw}" height="${bh}" rx="1" fill="${bFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+            `<rect x="${r2(bx + 2.2)}" y="${r2(ry + 2)}" width="${r2(Math.max(2, bw - 4.4))}" height="${r2(Math.max(2, bh - 4))}" rx="0.5" fill="none" stroke="${darkenHex(trimFill, 0.14)}" stroke-width="${r2(Math.max(0.65, lineW * 0.65))}" />`
+          );
+        }
+      } else {
+        const widths = [blockW * 0.5];
+        for (let c = 0; c < cols - 1; c++) widths.push(blockW);
+        widths.push(blockW * 0.5);
+        let curX = pl.x + 2;
+        widths.forEach((w, idx) => {
+          const bx = r2(curX);
+          const bw = r2(Math.max(5, w - 1.5));
+          const bFill = idx % 2 === 1 ? baseFill : trimFill;
+          parts.push(
+            `<rect x="${bx}" y="${ry}" width="${bw}" height="${bh}" rx="1" fill="${bFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+          );
+          if (bw >= 9) {
+            parts.push(
+              `<rect x="${r2(bx + 2.2)}" y="${r2(ry + 2)}" width="${r2(bw - 4.4)}" height="${r2(Math.max(2, bh - 4))}" rx="0.5" fill="none" stroke="${darkenHex(trimFill, 0.14)}" stroke-width="${r2(Math.max(0.65, lineW * 0.65))}" />`
+            );
+          }
+          curX += w;
+        });
+      }
+    }
     parts.push(
-      `<line x1="${dropX}" y1="${r2(ry)}" x2="${r2(dropX + 8)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+      `<rect x="${r2(pl.x - 1)}" y="${pl.y}" width="${r2(pl.width + 2)}" height="${capH}" rx="0.7" fill="${capFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
     );
+  } else if (style === 'molded_wood') {
+    const woodTint = darkenHex(baseFill, 0.08);
+    const woodDeep = darkenHex(baseFill, 0.17);
+    const pilW = 5.5;
+    const footH = 5;
+    parts.push(
+      `<rect x="${pl.x}" y="${pl.y}" width="${pl.width}" height="${pl.height}" fill="${woodTint}" stroke="none" />`,
+      `<rect x="${r2(pl.x - 1)}" y="${pl.y}" width="${r2(pl.width + 2)}" height="${capH}" rx="0.6" fill="${capFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+      `<rect x="${pl.x}" y="${r2(pl.y + pl.height - footH)}" width="${pl.width}" height="${footH}" fill="${woodDeep}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+    );
+    const innerTop = r2(pl.y + capH + 2.5);
+    const innerH = r2(Math.max(8, pl.height - capH - footH - 5));
+    const bayCount = panelsCount * 2;
+    const bayAreaW = pl.width - pilW * (bayCount + 1) - 4;
+    const bayW = bayAreaW / bayCount;
+
+    for (let i = 0; i <= bayCount; i++) {
+      const px = r2(pl.x + 2 + i * (bayW + pilW));
+      parts.push(
+        `<rect x="${px}" y="${r2(pl.y + capH)}" width="${pilW}" height="${r2(pl.height - capH - footH)}" fill="${capFill}" stroke="${pal.stroke}" stroke-width="${r2(lineW * 0.85)}" />`
+      );
+      if (i < bayCount) {
+        const bx = r2(px + pilW + 1.5);
+        const bw = r2(Math.max(6, bayW - 3));
+        parts.push(
+          `<rect x="${bx}" y="${innerTop}" width="${bw}" height="${innerH}" rx="0.8" fill="${woodDeep}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+          `<rect x="${r2(bx + 2.2)}" y="${r2(innerTop + 2.2)}" width="${r2(Math.max(2, bw - 4.4))}" height="${r2(Math.max(3, innerH - 4.4))}" rx="0.5" fill="${baseFill}" stroke="${pal.stroke}" stroke-width="${r2(lineW * 0.7)}" />`
+        );
+      }
+    }
+  } else if (style === 'granite_vented') {
+    const graniteFace = darkenHex(trimFill, 0.12);
+    const ironColor = pal.ironwork || '#262A34';
+    parts.push(
+      `<rect x="${pl.x}" y="${r2(pl.y + capH)}" width="${pl.width}" height="${r2(pl.height - capH)}" fill="${graniteFace}" stroke="none" />`,
+      `<rect x="${r2(pl.x - 1)}" y="${pl.y}" width="${r2(pl.width + 2)}" height="5" rx="0.6" fill="${capFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+    );
+
+    const ventsCount = panelsCount;
+    const ventGap = 12;
+    const padX = 12;
+    const maxBayW = (pl.width - padX * 2 - ventGap * (ventsCount - 1)) / ventsCount;
+    const ventW = r2(Math.max(16, Math.min(44, maxBayW * 0.72)));
+    const ventH = 14;
+    const ventY = r2(pl.y + 5 + (pl.height - 5 - ventH) / 2);
+
+    if (ventsCount === 2) {
+      const midJointX = r2(pl.x + pl.width / 2);
+      parts.push(
+        `<line x1="${midJointX}" y1="${r2(pl.y + 5)}" x2="${midJointX}" y2="${r2(pl.y + pl.height)}" stroke="${pal.stroke}" stroke-width="${r2(lineW * 0.85)}" />`
+      );
+    }
+
+    for (let i = 0; i < ventsCount; i++) {
+      const bayCenter = pl.x + (pl.width * (i + 0.5)) / ventsCount;
+      const vx = r2(bayCenter - ventW / 2);
+      parts.push(
+        `<rect class="plinth-vent-grille" x="${vx}" y="${ventY}" width="${ventW}" height="${ventH}" rx="1" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+      );
+      for (let ly = ventY + 3.5; ly <= ventY + ventH - 3; ly += 3.2) {
+        parts.push(
+          `<line x1="${r2(vx + 2.5)}" y1="${r2(ly)}" x2="${r2(vx + ventW - 2.5)}" y2="${r2(ly)}" stroke="${pal.corniceFrieze}" stroke-width="0.9" />`
+        );
+      }
+    }
+  } else {
+    // 'classic_panel'
+    parts.push(
+      `<rect x="${pl.x}" y="${r2(pl.y + pl.height - baseH)}" width="${pl.width}" height="${baseH}" fill="${trimFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+      `<rect x="${r2(pl.x - 1)}" y="${pl.y}" width="${r2(pl.width + 2)}" height="${capH}" rx="0.6" fill="${capFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+    );
+    const padX = 7;
+    const gap = 8;
+    const panelW = (pl.width - padX * 2 - gap * (panelsCount - 1)) / panelsCount;
+    const panelY = r2(pl.y + capH + 3);
+    const panelH = r2(Math.max(8, pl.height - capH - baseH - 6));
+
+    for (let i = 0; i < panelsCount; i++) {
+      const px = r2(pl.x + padX + i * (panelW + gap));
+      const pw = r2(Math.max(10, panelW));
+      parts.push(
+        `<rect x="${px}" y="${panelY}" width="${pw}" height="${panelH}" rx="1" fill="${trimFill}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+        `<rect x="${r2(px + 2.5)}" y="${r2(panelY + 2.5)}" width="${r2(Math.max(4, pw - 5))}" height="${r2(Math.max(4, panelH - 5))}" rx="0.6" fill="${baseFill}" stroke="${pal.stroke}" stroke-width="${r2(lineW * 0.72)}" />`
+      );
+    }
   }
+
+  parts.push(
+    `<rect x="${pl.x}" y="${pl.y}" width="${pl.width}" height="${pl.height}" fill="none" stroke="${pal.stroke}" stroke-width="${perimW}" />`,
+    `</g>`
+  );
+  return parts.join('\n');
+}
+
+/**
+ * Renderiza o elemento 'Toldo' (Awning) no pavimento térreo logo abaixo da cornija:
+ * largura total do térreo ('full'), somente acima da(s) porta(s) ('door_only') ou somente acima da vitrine ('shop_only').
+ */
+export function renderGroundAwning(
+  layout: FacadeLayout,
+  building: BuildingConfig,
+  elStrokeW: number
+): string {
+  if (!building.hasAwning) return '';
+  const ground = layout.sections.find((s): s is GroundSection => s.type === 'ground');
+  if (!ground) return '';
+
+  const pal = building.colors;
+  const placement = building.awningPlacement || 'shop_only';
+  const style = building.awningStyle || 'striped_classic';
+  const awningColor = pal.awning || '#A63A2B';
+  const stripeAlt = '#FAF5E8';
+  const awningDark = darkenHex(awningColor, 0.22);
+  const ironColor = pal.ironwork || '#262A34';
+  const lineW = r2(Math.max(0.95, elStrokeW * 0.78));
+  const thinW = r2(Math.max(0.75, elStrokeW * 0.55));
+
+  const topY = r2(ground.y + 1);
+  const slopeH = 17;
+  const valanceH = 6;
+  const frontY = r2(topY + slopeH);
+
+  let spans: Array<{ id: string; x: number; width: number }> = [];
+  if (placement === 'full') {
+    spans = [{ id: 'awning-full', x: r2(ground.x - 4), width: r2(ground.width + 8) }];
+  } else if (placement === 'door_only') {
+    spans = ground.doorAreas.map((d, idx) => ({
+      id: `awning-door-${idx + 1}`,
+      x: r2(d.x - 4),
+      width: r2(d.width + 8)
+    }));
+  } else {
+    spans = [
+      { id: 'awning-shop', x: r2(ground.shopArea.x - 4), width: r2(ground.shopArea.width + 8) }
+    ];
+  }
+
+  if (spans.length === 0) return '';
+
+  const parts: string[] = [
+    `<g id="exterior-ground-awning" data-awning-placement="${placement}" data-awning-style="${style}" stroke-linejoin="round" stroke-linecap="round">`
+  ];
+
+  spans.forEach((span) => {
+    const outX = 4;
+    const topLeft = span.x;
+    const topRight = span.x + span.width;
+    const frontLeft = span.x - outX;
+    const frontRight = span.x + span.width + outX;
+    const frontWidth = frontRight - frontLeft;
+
+    parts.push(
+      `<g class="awning-unit" data-awning-id="${span.id}" data-top-y="${topY}" data-width="${span.width}">`
+    );
+
+    // Sombra projetada sobre a fachada abaixo do toldo
+    parts.push(
+      `<polygon points="${r2(frontLeft + 2)},${r2(frontY + valanceH)} ${r2(frontRight - 2)},${r2(frontY + valanceH)} ${r2(topRight - 1)},${r2(frontY + valanceH + 5)} ${r2(topLeft + 1)},${r2(frontY + valanceH + 5)}" fill="#0E0F12" fill-opacity="0.22" stroke="none" />`
+    );
+
+    if (style === 'arched_canopy') {
+      const archSpringY = r2(topY + 11);
+      const archCtrlY = r2(topY - 7);
+      const midX = r2((topLeft + topRight) / 2);
+      const canopyBody = `M ${r2(frontLeft)} ${frontY} L ${r2(topLeft)} ${archSpringY} Q ${midX} ${archCtrlY} ${r2(topRight)} ${archSpringY} L ${r2(frontRight)} ${frontY} Z`;
+
+      parts.push(
+        `<path d="${canopyBody}" fill="${awningColor}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+      );
+
+      // Nervuras curvas metálicas da marquise
+      [0.25, 0.5, 0.75].forEach((t) => {
+        const fx = r2(frontLeft + frontWidth * t);
+        const tx = r2(topLeft + span.width * t);
+        const archOffset = Math.sin(t * Math.PI) * 9;
+        const ty = r2(archSpringY - archOffset);
+        parts.push(
+          `<line x1="${tx}" y1="${ty}" x2="${fx}" y2="${frontY}" stroke="${awningDark}" stroke-width="${thinW}" />`
+        );
+      });
+
+      // Saia frontal curva/reta com friso e medalhão central
+      parts.push(
+        `<rect x="${r2(frontLeft)}" y="${frontY}" width="${r2(frontWidth)}" height="${valanceH}" rx="1.2" fill="${awningDark}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+        `<line x1="${r2(frontLeft + 3)}" y1="${r2(frontY + 2)}" x2="${r2(frontRight - 3)}" y2="${r2(frontY + 2)}" stroke="${pal.cornice}" stroke-width="1.2" />`,
+        `<rect x="${r2(midX - 11)}" y="${r2(frontY + 0.8)}" width="22" height="${r2(valanceH - 1.6)}" rx="1" fill="${pal.cornice}" stroke="${pal.stroke}" stroke-width="${thinW}" />`
+      );
+    } else if (style === 'solid_valance') {
+      // Barra de fixação superior
+      parts.push(
+        `<rect x="${r2(topLeft)}" y="${topY}" width="${r2(span.width)}" height="3.2" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${thinW}" />`,
+        `<polygon points="${r2(topLeft)},${r2(topY + 3)} ${r2(topRight)},${r2(topY + 3)} ${r2(frontRight)},${frontY} ${r2(frontLeft)},${frontY}" fill="${awningColor}" stroke="${pal.stroke}" stroke-width="${lineW}" />`
+      );
+
+      const seamCount = Math.max(3, Math.round(span.width / 26));
+      for (let s = 1; s < seamCount; s++) {
+        const frac = s / seamCount;
+        const sx1 = r2(topLeft + span.width * frac);
+        const sx2 = r2(frontLeft + frontWidth * frac);
+        parts.push(
+          `<line x1="${sx1}" y1="${r2(topY + 3)}" x2="${sx2}" y2="${frontY}" stroke="${awningDark}" stroke-width="${thinW}" />`
+        );
+      }
+
+      // Saia frontal sólida c/ faixa contrastante
+      parts.push(
+        `<rect x="${r2(frontLeft)}" y="${frontY}" width="${r2(frontWidth)}" height="${valanceH}" rx="0.6" fill="${awningDark}" stroke="${pal.stroke}" stroke-width="${lineW}" />`,
+        `<line x1="${r2(frontLeft + 2)}" y1="${r2(frontY + valanceH - 2)}" x2="${r2(frontRight - 2)}" y2="${r2(frontY + valanceH - 2)}" stroke="${pal.cornice}" stroke-width="1.4" />`
+      );
+    } else {
+      // 'striped_classic'
+      parts.push(
+        `<rect x="${r2(topLeft)}" y="${topY}" width="${r2(span.width)}" height="3.2" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${thinW}" />`
+      );
+
+      let stripeCount = Math.max(5, Math.round(span.width / 11));
+      if (stripeCount % 2 === 0) stripeCount += 1;
+
+      for (let k = 0; k < stripeCount; k++) {
+        const t0 = k / stripeCount;
+        const t1 = (k + 1) / stripeCount;
+        const xTop0 = r2(topLeft + span.width * t0);
+        const xTop1 = r2(topLeft + span.width * t1);
+        const xBot0 = r2(frontLeft + frontWidth * t0);
+        const xBot1 = r2(frontLeft + frontWidth * t1);
+        const fill = k % 2 === 0 ? awningColor : stripeAlt;
+
+        parts.push(
+          `<polygon points="${xTop0},${r2(topY + 3)} ${xTop1},${r2(topY + 3)} ${xBot1},${frontY} ${xBot0},${frontY}" fill="${fill}" stroke="${pal.stroke}" stroke-width="${r2(thinW * 0.85)}" />`
+        );
+      }
+
+      // Saia ondulada (scalloped valance)
+      parts.push(`<g class="awning-valance-scalloped">`);
+      for (let k = 0; k < stripeCount; k++) {
+        const t0 = k / stripeCount;
+        const t1 = (k + 1) / stripeCount;
+        const vx0 = r2(frontLeft + frontWidth * t0);
+        const vx1 = r2(frontLeft + frontWidth * t1);
+        const vMid = r2((vx0 + vx1) / 2);
+        const fill = k % 2 === 0 ? awningColor : stripeAlt;
+        const scD = `M ${vx0} ${frontY} L ${vx1} ${frontY} L ${vx1} ${r2(frontY + valanceH - 2.2)} Q ${vMid} ${r2(frontY + valanceH + 1.8)} ${vx0} ${r2(frontY + valanceH - 2.2)} Z`;
+        parts.push(
+          `<path d="${scD}" fill="${fill}" stroke="${pal.stroke}" stroke-width="${r2(thinW * 0.9)}" />`
+        );
+      }
+      parts.push(`</g>`);
+    }
+
+    // Braços metálicos de sustentação nas extremidades
+    [
+      { top: topLeft + 1, front: frontLeft + 2 },
+      { top: topRight - 1, front: frontRight - 2 }
+    ].forEach(({ top, front }) => {
+      parts.push(
+        `<line x1="${r2(top)}" y1="${r2(frontY + 4)}" x2="${r2(front)}" y2="${frontY}" stroke="${ironColor}" stroke-width="${lineW}" />`
+      );
+    });
+
+    parts.push(`</g>`);
+  });
 
   parts.push(`</g>`);
   return parts.join('\n');

@@ -7,6 +7,8 @@ import {
   renderFireEscape,
   renderFloorWallDetails,
   renderFooterGarden,
+  renderGroundAwning,
+  renderGroundPlinth,
   renderRoofBattlements,
   renderWallPatternDefs
 } from './structuralDetailsRenderer';
@@ -69,10 +71,7 @@ export function renderFacadeSVG(
       bodyParts.push(renderFloorWallDetails(sec, state.building, elSw));
 
       if (sec.type === 'ground' && sec.plinth) {
-        const pl = sec.plinth;
-        bodyParts.push(
-          `<rect x="${pl.x}" y="${pl.y}" width="${pl.width}" height="${pl.height}" fill="${pal.plinthBand || pal.cornice}" stroke="none" />`
-        );
+        bodyParts.push(renderGroundPlinth(sec, state.building, sw, elSw));
       }
 
       bodyParts.push(
@@ -149,10 +148,11 @@ export function renderFacadeSVG(
 
   bodyParts.push(`</g>`);
 
-  // CAMADA 3: ELEMENTOS EXTERNOS (JARDIM, ESCADA DE ENTRADA, ESCADA DE INCÊNDIO)
+  // CAMADA 3: ELEMENTOS EXTERNOS (TOLDO, JARDIM, ESCADA DE ENTRADA, ESCADA DE INCÊNDIO)
   bodyParts.push(`<g id="layer-exterior-elements">`);
   bodyParts.push(renderFooterGarden(layout, state.building, elSw));
   bodyParts.push(renderEntranceStairs(layout, state.building, elSw));
+  bodyParts.push(renderGroundAwning(layout, state.building, elSw));
   bodyParts.push(renderFireEscape(layout, state.building, elSw));
   bodyParts.push(`</g>`);
 

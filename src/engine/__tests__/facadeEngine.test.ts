@@ -259,6 +259,71 @@ describe('Motor Procedural NY Facade Studio (Etapa 2.4)', () => {
     expect(thickLayout.totalHeight - thinLayout.totalHeight).toBe(128);
   });
 
+  it('renderiza os 4 estilos selecionáveis de embasamento no rodapé do térreo', () => {
+    const baseState = createDefaultState();
+
+    (['classic_panel', 'rusticated_ashlar', 'molded_wood', 'granite_vented'] as const).forEach(
+      (style) => {
+        const state = {
+          ...baseState,
+          building: { ...baseState.building, hasPlinth: true, plinthStyle: style }
+        };
+        const layout = computeFacadeLayout(state.building, false);
+        const svg = renderFacadeSVG(layout, state, { cleanExport: true });
+
+        expect(svg).toContain(`id="ground-plinth" data-plinth-style="${style}"`);
+        if (style === 'granite_vented') {
+          expect(svg).toContain('class="plinth-vent-grille"');
+        }
+      }
+    );
+  });
+
+  it('renderiza toldo logo abaixo da cornija nas 3 abrangências (full, door_only, shop_only) e 3 estilos', () => {
+    const baseState = createDefaultState();
+    baseState.building.hasAwning = true;
+    baseState.building.groundDoorCount = 2;
+    baseState.building.doorSide = 'split';
+
+    const layout = computeFacadeLayout(baseState.building, false);
+    const ground = layout.sections.find((s) => s.type === 'ground');
+    if (!ground || ground.type !== 'ground') throw new Error('Esperada seção ground');
+
+    const expectedTopY = ground.y + 1;
+
+    // 1) Largura total do térreo
+    const fullState = {
+      ...baseState,
+      building: { ...baseState.building, awningPlacement: 'full' as const, awningStyle: 'solid_valance' as const }
+    };
+    const fullSvg = renderFacadeSVG(layout, fullState, { cleanExport: true });
+    expect(fullSvg).toContain('data-awning-placement="full"');
+    expect(fullSvg).toContain('data-awning-style="solid_valance"');
+    expect(fullSvg).toContain(`data-awning-id="awning-full" data-top-y="${expectedTopY}" data-width="${ground.width + 8}"`);
+
+    // 2) Somente acima das portas (2 portas -> 2 toldos individuais)
+    const doorState = {
+      ...baseState,
+      building: { ...baseState.building, awningPlacement: 'door_only' as const, awningStyle: 'arched_canopy' as const }
+    };
+    const doorSvg = renderFacadeSVG(layout, doorState, { cleanExport: true });
+    expect(doorSvg).toContain('data-awning-placement="door_only"');
+    expect(doorSvg).toContain('data-awning-id="awning-door-1"');
+    expect(doorSvg).toContain('data-awning-id="awning-door-2"');
+
+    // 3) Somente acima da vitrine
+    const shopState = {
+      ...baseState,
+      building: { ...baseState.building, awningPlacement: 'shop_only' as const, awningStyle: 'striped_classic' as const }
+    };
+    const shopSvg = renderFacadeSVG(layout, shopState, { cleanExport: true });
+    expect(shopSvg).toContain('data-awning-placement="shop_only"');
+    expect(shopSvg).toContain('class="awning-valance-scalloped"');
+    expect(shopSvg).toContain(
+      `data-awning-id="awning-shop" data-top-y="${expectedTopY}" data-width="${Math.round((ground.shopArea.width + 8) * 100) / 100}"`
+    );
+  });
+
   it('expõe documentação completa para todas as 16 seções incluindo navegação mobile 9:16', () => {
     expect(FEATURE_DOCS.length).toBe(16);
     FEATURE_DOCS.forEach((doc) => {

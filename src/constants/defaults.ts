@@ -13,7 +13,8 @@ export const BUILDING_PALETTES: BuildingPalette[] = [
     plinthBand: '#FAF5E8',
     door: '#87593F',
     stroke: '#2E1412',
-    ironwork: '#262A34'
+    ironwork: '#262A34',
+    awning: '#A63A2B'
   },
   {
     id: 'terracota-tijolo',
@@ -25,7 +26,8 @@ export const BUILDING_PALETTES: BuildingPalette[] = [
     plinthBand: '#F2EAE0',
     door: '#7F523B',
     stroke: '#2B1410',
-    ironwork: '#202229'
+    ironwork: '#202229',
+    awning: '#2A5C43'
   },
   {
     id: 'pedra-calcarea',
@@ -37,7 +39,8 @@ export const BUILDING_PALETTES: BuildingPalette[] = [
     plinthBand: '#F6F2E9',
     door: '#735340',
     stroke: '#2A2520',
-    ironwork: '#2C3038'
+    ironwork: '#2C3038',
+    awning: '#23395B'
   },
   {
     id: 'grafite-urbano',
@@ -49,7 +52,8 @@ export const BUILDING_PALETTES: BuildingPalette[] = [
     plinthBand: '#E5E7EB',
     door: '#6D4C3D',
     stroke: '#1B1D22',
-    ironwork: '#181B22'
+    ironwork: '#181B22',
+    awning: '#8C2D2B'
   }
 ];
 
@@ -200,7 +204,7 @@ export function createDefaultDoorLibrary(): DoorModule[] {
 
 export function createDefaultState(): FacadeState {
   return {
-    version: '2.5.0',
+    version: '2.7.0',
     building: {
       bodyWidth: 280,
       typicalFloors: 2,
@@ -210,6 +214,7 @@ export function createDefaultState(): FacadeState {
       hasAttic: true,
       hasCenterBand: true,
       hasPlinth: true,
+      plinthStyle: 'classic_panel',
       doorSide: 'right',
       groundDoorCount: 1,
       groundShopMode: 'double',
@@ -222,6 +227,9 @@ export function createDefaultState(): FacadeState {
       corniceStyle: 'dentils',
       corniceHeight: 38,
       corniceFlush: false,
+      hasAwning: true,
+      awningPlacement: 'shop_only',
+      awningStyle: 'striped_classic',
       hasFooterGarden: true,
       gardenStyle: 'iron_rail_hedges',
       hasEntranceStairs: true,
@@ -237,7 +245,8 @@ export function createDefaultState(): FacadeState {
         plinthBand: '#FAF5E8',
         door: '#87593F',
         stroke: '#2E1412',
-        ironwork: '#262A34'
+        ironwork: '#262A34',
+        awning: '#A63A2B'
       }
     },
     windowLibrary: [

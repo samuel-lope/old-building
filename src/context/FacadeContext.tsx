@@ -74,6 +74,10 @@ function loadState(): FacadeState {
         battlementsStyle: parsed.building.battlementsStyle || 'classic',
         corniceHeight: Math.max(16, Math.min(56, parsed.building.corniceHeight ?? 38)),
         corniceFlush: Boolean(parsed.building.corniceFlush),
+        plinthStyle: parsed.building.plinthStyle || 'classic_panel',
+        hasAwning: parsed.building.hasAwning ?? def.building.hasAwning,
+        awningPlacement: parsed.building.awningPlacement || 'shop_only',
+        awningStyle: parsed.building.awningStyle || 'striped_classic',
         groundShopMode: parsed.building.groundShopMode || 'double',
         shopFitMode: parsed.building.shopFitMode || 'fill',
         colors: { ...def.building.colors, ...(parsed.building.colors || {}) }
@@ -267,7 +271,8 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
           plinthBand: p.plinthBand,
           door: p.door,
           stroke: p.stroke,
-          ironwork: p.ironwork
+          ironwork: p.ironwork,
+          awning: p.awning
         }
       }
     }));
@@ -620,6 +625,10 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
             battlementsStyle: parsed.building?.battlementsStyle || def.building.battlementsStyle,
             corniceHeight: Math.max(16, Math.min(56, parsed.building?.corniceHeight ?? def.building.corniceHeight)),
             corniceFlush: Boolean(parsed.building?.corniceFlush),
+            plinthStyle: parsed.building?.plinthStyle || def.building.plinthStyle,
+            hasAwning: parsed.building?.hasAwning ?? def.building.hasAwning,
+            awningPlacement: parsed.building?.awningPlacement || def.building.awningPlacement,
+            awningStyle: parsed.building?.awningStyle || def.building.awningStyle,
             colors: { ...def.building.colors, ...(parsed.building?.colors || {}) }
           },
           windowLibrary: parsed.windowLibrary!,

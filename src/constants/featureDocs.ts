@@ -111,12 +111,21 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
     id: 'elementos-externos-fachada',
     category: 'Estrutura',
     tabLabel: '1. Estrutura',
-    title: 'Elementos Externos: Jardim, Escada & Escada de Incêndio',
+    title: 'Elementos Externos: Toldo, Jardim, Escada & Escada de Incêndio',
     summary:
-      'Adiciona elementos opcionais característicos das fachadas de Nova York: jardim no rodapé, escadaria frontal na porta de entrada (stoop) e escada de incêndio metálica.',
+      'Adiciona elementos opcionais característicos das fachadas de Nova York: toldo comercial no térreo (logo abaixo da cornija), jardim no rodapé, escadaria frontal (stoop) e escada de incêndio metálica.',
     howItWorks:
-      'Renderizados na camada #layer-exterior-elements: o jardim ocupa a base da zona comercial sem obstruir a porta; a escada frontal alinha-se ao slot TERREO_PORTA abaixo de +0.00m; e a escada de incêndio conecta automaticamente todas as janelas da prumada selecionada.',
+      'Renderizados na camada #layer-exterior-elements: o toldo ancora-se abaixo da cornija do térreo cobrindo toda a fachada, só as portas ou só a vitrine; o jardim ocupa a base comercial sem obstruir a porta; a escada frontal alinha-se a TERREO_PORTA abaixo de +0.00m; e a escada de incêndio conecta as janelas da prumada selecionada.',
     parameters: [
+      {
+        name: 'Toldo no Térreo (Abrangência & Estilo)',
+        control: 'Switch + 2 Grupos Segmentados',
+        rangeOrOptions:
+          'Abrangência: Térreo Inteiro | Só Porta(s) | Só Vitrine · Estilo: Listrado NY | Lona Sólida | Marquise Curva',
+        defaultValue: 'Ligado (Só Vitrine · Listrado NY)',
+        behavior:
+          'Fixa toldo ou marquise abaixo da cornija do térreo em toda a fachada (full), acima das portas (door_only) ou sobre a vitrine (shop_only).'
+      },
       {
         name: 'Jardim no Rodapé',
         control: 'Switch + Seletor de Estilo',
@@ -173,12 +182,13 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
           'Alterna entre TERREO_PORTA único (com 2/3 para vitrines) e duas entradas independentes (TERREO_PORTA + TERREO_PORTA_2) combinadas com 1 vitrine de 1/3.'
       },
       {
-        name: 'Embasamento no Térreo',
-        control: 'Switch',
-        rangeOrOptions: 'Ligado / Desligado',
-        defaultValue: 'Ligado',
+        name: 'Embasamento no Térreo (4 Modelos)',
+        control: 'Switch + Select (selPlinthStyle)',
+        rangeOrOptions:
+          'Painel Clássico Moldurado | Cantaria Almofadada | Boiserie Comercial | Granito c/ Grelhas de Ventilação',
+        defaultValue: 'Ligado · Painel Clássico Moldurado',
         behavior:
-          'Adiciona rodapé contínuo (32u de altura) estritamente sob a zona da vitrine, sem cruzar as portas.'
+          'Adiciona rodapé contínuo (32u de altura) sob a vitrine com painéis rebaixados, blocos de pedra alternados, marcenaria ou grelhas de ventilação.'
       },
       {
         name: 'Posição / Arranjo da(s) Porta(s)',
@@ -229,12 +239,13 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
           'Aplica conjuntos harmônicos de alvenaria, sombra sob cornijas, cantaria e contorno técnico.'
       },
       {
-        name: 'Cores Individuais (7 canais)',
+        name: 'Cores Individuais (9 canais)',
         control: 'Color Pickers',
-        rangeOrOptions: 'Parede, Sombra, Contorno, Cornija, Friso, Embasam./Faixa, Porta',
-        defaultValue: 'Paleta #F3A847 / #FAF5E8 / #2E1412',
+        rangeOrOptions:
+          'Parede, Sombra, Contorno, Cornija, Friso, Embasam./Faixa, Porta, Ferro/Escada, Toldo',
+        defaultValue: 'Paleta #F3A847 / #FAF5E8 / #2E1412 / #A63A2B',
         behavior:
-          'Atualiza em tempo real todas as camadas SVG; Contorno e Cornija também alimentam janelas sincronizadas.'
+          'Atualiza em tempo real todas as camadas SVG; Contorno e Cornija alimentam módulos sincronizados e Toldo Térreo controla a cor da lona/marquise.'
       }
     ],
     tips: [
