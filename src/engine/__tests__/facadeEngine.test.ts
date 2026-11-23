@@ -324,6 +324,68 @@ describe('Motor Procedural NY Facade Studio (Etapa 2.4)', () => {
     );
   });
 
+  it('renderiza os 4 estilos detalhados da escada de incêndio integrados ao ático, cobertura e drop ladder', () => {
+    const baseState = createDefaultState();
+    baseState.building.hasFireEscape = true;
+    baseState.building.hasAttic = true;
+    baseState.building.typicalFloors = 2;
+    baseState.building.typicalSlotsCount = 4;
+    baseState.building.fireEscapePlacement = 'left';
+
+    (['classic_zigzag', 'soho_ornate', 'double_bay', 'industrial_cage'] as const).forEach(
+      (style) => {
+        const state = {
+          ...baseState,
+          building: { ...baseState.building, fireEscapeStyle: style }
+        };
+        const layout = computeFacadeLayout(state.building, false);
+        const svg = renderFacadeSVG(layout, state, { cleanExport: true });
+
+        expect(svg).toContain(`data-fire-escape-style="${style}"`);
+        expect(svg).toContain('class="fe-wall-shadow"');
+        expect(svg).toContain('class="fe-roof-gooseneck"');
+        expect(svg).toContain('data-level-type="attic"');
+        expect(svg).toContain('class="fe-counterweight"');
+
+        if (style === 'soho_ornate') {
+          expect(svg).toContain('class="fe-ornate-rings"');
+          expect(svg).toContain('class="fe-scroll-bracket"');
+        }
+        if (style === 'double_bay') {
+          expect(svg).toContain('data-bay-span="2"');
+        }
+        if (style === 'industrial_cage') {
+          expect(svg).toContain('class="fe-x-bracing"');
+          expect(svg).toContain('class="fe-safety-cage"');
+        } else {
+          expect(svg).toContain('class="fe-stair-treads"');
+        }
+      }
+    );
+
+    const layout = computeFacadeLayout(baseState.building, false);
+    const retractedSvg = renderFacadeSVG(
+      layout,
+      {
+        ...baseState,
+        building: { ...baseState.building, fireEscapeDropMode: 'retracted' }
+      },
+      { cleanExport: true }
+    );
+    const deployedSvg = renderFacadeSVG(
+      layout,
+      {
+        ...baseState,
+        building: { ...baseState.building, fireEscapeDropMode: 'deployed' }
+      },
+      { cleanExport: true }
+    );
+
+    expect(retractedSvg).toContain('data-drop-mode="retracted"');
+    expect(deployedSvg).toContain('data-drop-mode="deployed"');
+    expect(deployedSvg).toContain(`data-drop-bot="${layout.bounds.bottomY - 6}"`);
+  });
+
   it('expõe documentação completa para todas as 16 seções incluindo navegação mobile 9:16', () => {
     expect(FEATURE_DOCS.length).toBe(16);
     FEATURE_DOCS.forEach((doc) => {

@@ -204,7 +204,7 @@ export function createDefaultDoorLibrary(): DoorModule[] {
 
 export function createDefaultState(): FacadeState {
   return {
-    version: '2.7.0',
+    version: '2.8.0',
     building: {
       bodyWidth: 280,
       typicalFloors: 2,
@@ -236,6 +236,8 @@ export function createDefaultState(): FacadeState {
       entranceStairsStyle: 'stoop_classic',
       hasFireEscape: false,
       fireEscapePlacement: 'left',
+      fireEscapeStyle: 'classic_zigzag',
+      fireEscapeDropMode: 'retracted',
       paletteId: 'ny-ocre',
       colors: {
         wall: '#F3A847',

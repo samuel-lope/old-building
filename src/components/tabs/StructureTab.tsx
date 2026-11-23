@@ -9,7 +9,9 @@ import type {
   ColumnBandsMode,
   CorniceStyle,
   EntranceStairsStyle,
+  FireEscapeDropMode,
   FireEscapePlacement,
+  FireEscapeStyle,
   GardenStyle,
   PlinthStyle,
   WallPatternType
@@ -703,27 +705,69 @@ export function StructureTab() {
         </label>
 
         {b.hasFireEscape && (
-          <div className="field">
-            <span className="field-label">Prumada da Escada de Incêndio</span>
-            <div id="grpFireEscapePlacement" className="seg-group seg-3">
-              {(
-                [
-                  { val: 'left', label: '← Esquerda' },
-                  { val: 'center', label: 'Centro' },
-                  { val: 'right', label: 'Direita →' }
-                ] as Array<{ val: FireEscapePlacement; label: string }>
-              ).map((opt) => (
-                <button
-                  key={opt.val}
-                  type="button"
-                  className={`seg-btn ${b.fireEscapePlacement === opt.val ? 'active' : ''}`}
-                  onClick={() => updateBuilding({ fireEscapePlacement: opt.val })}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          <>
+            <div className="field">
+              <label className="field-label" htmlFor="selFireEscapeStyle">
+                Modelo da Escada de Incêndio
+              </label>
+              <select
+                id="selFireEscapeStyle"
+                className="select-input"
+                value={b.fireEscapeStyle || 'classic_zigzag'}
+                onChange={(e) =>
+                  updateBuilding({ fireEscapeStyle: e.target.value as FireEscapeStyle })
+                }
+              >
+                <option value="classic_zigzag">Tenement Clássica (Ziguezague)</option>
+                <option value="soho_ornate">SoHo Ferro Fundido (Ornamentada)</option>
+                <option value="double_bay">Varanda Dupla (2 Janelas)</option>
+                <option value="industrial_cage">Industrial c/ Gaiola de Segurança</option>
+              </select>
             </div>
-          </div>
+
+            <div className="field">
+              <span className="field-label">Prumada da Escada de Incêndio</span>
+              <div id="grpFireEscapePlacement" className="seg-group seg-3">
+                {(
+                  [
+                    { val: 'left', label: '← Esquerda' },
+                    { val: 'center', label: 'Centro' },
+                    { val: 'right', label: 'Direita →' }
+                  ] as Array<{ val: FireEscapePlacement; label: string }>
+                ).map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    className={`seg-btn ${b.fireEscapePlacement === opt.val ? 'active' : ''}`}
+                    onClick={() => updateBuilding({ fireEscapePlacement: opt.val })}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Escada Retrátil do Térreo (Drop Ladder)</span>
+              <div id="grpFireEscapeDropMode" className="seg-group seg-2">
+                {(
+                  [
+                    { val: 'retracted', label: 'Recolhida (Contrapeso)' },
+                    { val: 'deployed', label: 'Estendida ao Térreo' }
+                  ] as Array<{ val: FireEscapeDropMode; label: string }>
+                ).map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    className={`seg-btn ${b.fireEscapeDropMode === opt.val ? 'active' : ''}`}
+                    onClick={() => updateBuilding({ fireEscapeDropMode: opt.val })}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
 

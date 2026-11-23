@@ -78,6 +78,8 @@ function loadState(): FacadeState {
         hasAwning: parsed.building.hasAwning ?? def.building.hasAwning,
         awningPlacement: parsed.building.awningPlacement || 'shop_only',
         awningStyle: parsed.building.awningStyle || 'striped_classic',
+        fireEscapeStyle: parsed.building.fireEscapeStyle || 'classic_zigzag',
+        fireEscapeDropMode: parsed.building.fireEscapeDropMode || 'retracted',
         groundShopMode: parsed.building.groundShopMode || 'double',
         shopFitMode: parsed.building.shopFitMode || 'fill',
         colors: { ...def.building.colors, ...(parsed.building.colors || {}) }
@@ -629,6 +631,8 @@ export function FacadeProvider({ children }: { children: React.ReactNode }) {
             hasAwning: parsed.building?.hasAwning ?? def.building.hasAwning,
             awningPlacement: parsed.building?.awningPlacement || def.building.awningPlacement,
             awningStyle: parsed.building?.awningStyle || def.building.awningStyle,
+            fireEscapeStyle: parsed.building?.fireEscapeStyle || def.building.fireEscapeStyle,
+            fireEscapeDropMode: parsed.building?.fireEscapeDropMode || def.building.fireEscapeDropMode,
             colors: { ...def.building.colors, ...(parsed.building?.colors || {}) }
           },
           windowLibrary: parsed.windowLibrary!,

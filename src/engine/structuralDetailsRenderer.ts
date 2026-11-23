@@ -543,8 +543,105 @@ export function renderEntranceStairs(
 }
 
 /**
- * Renderiza o elemento opcional 'Escada de Incêndio' metálica na fachada (NY Fire Escape).
+ * Renderiza o elemento opcional 'Escada de Incêndio' metálica na fachada (NY Fire Escape)
+ * com 4 estilos históricos, conexão c/ Ático, pescoço-de-ganso, sombra e contrapeso no térreo.
  */
+interface FireEscapeBalcony {
+  balX: number;
+  balW: number;
+  deckY: number;
+  railH: number;
+  isAttic: boolean;
+}
+
+function resolveFireEscapeBalconies(
+  layout: FacadeLayout,
+  building: BuildingConfig
+): FireEscapeBalcony[] {
+  const typicalSlots = layout.slots.filter((s) => s.zone === 'typical');
+  if (typicalSlots.length === 0) return [];
+
+  const style = building.fireEscapeStyle || 'classic_zigzag';
+  const placement = building.fireEscapePlacement || 'left';
+  const colCount = Math.max(2, building.typicalSlotsCount || 2);
+
+  let targetCols: number[];
+  if (style === 'double_bay') {
+    if (placement === 'right') {
+      targetCols = [Math.max(0, colCount - 2), colCount - 1];
+    } else if (placement === 'center') {
+      const start = Math.max(0, Math.floor((colCount - 2) / 2));
+      targetCols = [start, Math.min(colCount - 1, start + 1)];
+    } else {
+      targetCols = [0, 1];
+    }
+  } else {
+    let col = 0;
+    if (placement === 'center') col = Math.floor((colCount - 1) / 2);
+    else if (placement === 'right') col = colCount - 1;
+    targetCols = [col];
+  }
+
+  const floorNumbers = Array.from(new Set(typicalSlots.map((s) => s.floorNum ?? 1))).sort(
+    (a, b) => b - a
+  );
+  const pad = style === 'double_bay' ? 8 : 11;
+  const minBoundX = layout.bounds.bodyX + 4;
+  const maxBoundX = layout.bounds.bodyX + layout.bodyWidth - 4;
+
+  const clampSpan = (rawX: number, rawRight: number) => {
+    const clampedX = r2(Math.max(minBoundX, rawX));
+    const clampedRight = r2(Math.min(maxBoundX, rawRight));
+    return {
+      balX: clampedX,
+      balW: r2(Math.max(36, clampedRight - clampedX))
+    };
+  };
+
+  const typicalBalconies: FireEscapeBalcony[] = [];
+  floorNumbers.forEach((floorNum) => {
+    const matched = typicalSlots.filter(
+      (s) => (s.floorNum ?? 1) === floorNum && targetCols.includes(s.colIndex ?? 0)
+    );
+    if (matched.length === 0) return;
+    const rawMinX = Math.min(...matched.map((s) => s.x)) - pad;
+    const rawMaxR = Math.max(...matched.map((s) => s.x + s.width)) + pad;
+    const { balX, balW } = clampSpan(rawMinX, rawMaxR);
+    const deckY = r2(matched[0].y + matched[0].height - 4);
+    typicalBalconies.push({ balX, balW, deckY, railH: 23, isAttic: false });
+  });
+
+  if (typicalBalconies.length === 0) return [];
+
+  const balconies: FireEscapeBalcony[] = [];
+
+  // Integração automática com Pavimento Ático quando ativo
+  if (building.hasAttic) {
+    const atticSlots = layout.slots.filter((s) => s.zone === 'attic');
+    const refBal = typicalBalconies[0];
+    const overlapping = atticSlots.filter(
+      (s) => s.x + s.width >= refBal.balX && s.x <= refBal.balX + refBal.balW
+    );
+    const chosenAttic =
+      overlapping.length > 0
+        ? overlapping
+        : atticSlots.filter((s) => targetCols.includes(s.colIndex ?? 0));
+
+    if (chosenAttic.length > 0) {
+      const attMinX = Math.min(...chosenAttic.map((s) => s.x)) - 8;
+      const attMaxR = Math.max(...chosenAttic.map((s) => s.x + s.width)) + 8;
+      const { balX, balW } = clampSpan(
+        style === 'double_bay' ? Math.min(attMinX, refBal.balX) : attMinX,
+        style === 'double_bay' ? Math.max(attMaxR, refBal.balX + refBal.balW) : attMaxR
+      );
+      const deckY = r2(chosenAttic[0].y + chosenAttic[0].height - 2);
+      balconies.push({ balX, balW, deckY, railH: 17, isAttic: true });
+    }
+  }
+
+  return [...balconies, ...typicalBalconies];
+}
+
 export function renderFireEscape(
   layout: FacadeLayout,
   building: BuildingConfig,
@@ -552,137 +649,335 @@ export function renderFireEscape(
 ): string {
   if (!building.hasFireEscape) return '';
 
+  const balconies = resolveFireEscapeBalconies(layout, building);
+  if (balconies.length === 0) return '';
+
+  const style = building.fireEscapeStyle || 'classic_zigzag';
+  const dropMode = building.fireEscapeDropMode || 'retracted';
+  const placement = building.fireEscapePlacement || 'left';
   const pal = building.colors;
   const ironColor = pal.ironwork || '#262A34';
+  const ironHighlight = darkenHex(pal.ironwork || '#262A34', -0.2);
   const strokeW = r2(Math.max(1.1, elStrokeW * 0.72));
-  const thinW = r2(Math.max(0.85, elStrokeW * 0.52));
+  const thinW = r2(Math.max(0.8, elStrokeW * 0.5));
+  const fineW = r2(Math.max(0.65, elStrokeW * 0.42));
 
-  // Coleta as prumadas disponíveis dos pavimentos tipo (ordenados de cima para baixo)
-  const typicalSlots = layout.slots.filter((s) => s.zone === 'typical');
-  if (typicalSlots.length === 0) return '';
+  const parts: string[] = [
+    `<g id="exterior-fire-escape" data-fire-escape-style="${style}" data-fire-escape-drop="${dropMode}" stroke-linejoin="round" stroke-linecap="round">`
+  ];
 
-  const colCount = Math.max(2, building.typicalSlotsCount || 2);
-  let targetCol = 0;
-  if (building.fireEscapePlacement === 'center') {
-    targetCol = Math.floor((colCount - 1) / 2);
-  } else if (building.fireEscapePlacement === 'right') {
-    targetCol = colCount - 1;
-  }
+  // 1. SOMBRA PROJETADA NA ALVENARIA (PROFUNDIDADE 3D)
+  const shadowParts: string[] = [
+    `<g class="fe-wall-shadow" fill="#0E0F12" fill-opacity="0.16" stroke="none">`
+  ];
+  const shDx = 3.5;
+  const shDy = 4;
 
-  // Agrupa um slot por pavimento tipo (de cima para baixo em Y)
-  const floorSlots = typicalSlots
-    .filter((s) => (s.colIndex ?? 0) === targetCol)
-    .sort((a, b) => a.y - b.y);
-
-  if (floorSlots.length === 0) return '';
-
-  const parts: string[] = [`<g id="exterior-fire-escape" stroke-linejoin="round" stroke-linecap="round">`];
-
-  const balconies = floorSlots.map((slot) => {
-    const balW = r2(slot.width + 20);
-    const balX = r2(slot.x - 10);
-    const deckY = r2(slot.y + slot.height - 4);
-    const railH = 22;
-    return { balX, balW, deckY, railH, slot };
-  });
-
-  // Escada vertical de acesso à cobertura acima da varanda mais alta
-  const topBal = balconies[0];
-  const roofTopY = layout.bounds.topY + 12;
-  const roofLadX = r2(topBal.balX + 6);
-  parts.push(
-    `<line x1="${roofLadX}" y1="${roofTopY}" x2="${roofLadX}" y2="${topBal.deckY}" stroke="${ironColor}" stroke-width="${strokeW}" />`
-  );
-  parts.push(
-    `<line x1="${r2(roofLadX + 8)}" y1="${roofTopY}" x2="${r2(roofLadX + 8)}" y2="${topBal.deckY}" stroke="${ironColor}" stroke-width="${strokeW}" />`
-  );
-  for (let ry = roofTopY + 5; ry < topBal.deckY - 4; ry += 8) {
-    parts.push(
-      `<line x1="${roofLadX}" y1="${r2(ry)}" x2="${r2(roofLadX + 8)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
-    );
-  }
-
-  // Lances diagonais em ziguezague entre pavimentos
-  for (let i = 0; i < balconies.length - 1; i++) {
-    const upper = balconies[i];
-    const lower = balconies[i + 1];
-    const goRight = i % 2 === 0;
-    const x1 = r2(goRight ? upper.balX + 12 : upper.balX + upper.balW - 12);
-    const y1 = r2(upper.deckY);
-    const x2 = r2(goRight ? lower.balX + lower.balW - 10 : lower.balX + 10);
-    const y2 = r2(lower.deckY);
-
-    // Longarinas duplas e corrimão
-    parts.push(
-      `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.25)}" />`
-    );
-    parts.push(
-      `<line x1="${r2(x1 + 5)}" y1="${y1}" x2="${r2(x2 + 5)}" y2="${y2}" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.1)}" />`
-    );
-    parts.push(
-      `<line x1="${x1}" y1="${r2(y1 - 14)}" x2="${x2}" y2="${r2(y2 - 14)}" stroke="${ironColor}" stroke-width="${thinW}" />`
-    );
-
-    const steps = 8;
-    for (let k = 1; k < steps; k++) {
-      const t = k / steps;
-      const sx = r2(x1 + (x2 - x1) * t);
-      const sy = r2(y1 + (y2 - y1) * t);
-      parts.push(
-        `<line x1="${sx}" y1="${sy}" x2="${r2(sx + 5)}" y2="${sy}" stroke="${ironColor}" stroke-width="${thinW}" />`
-      );
-    }
-  }
-
-  // Varandas gradeadas e mãos-francesas por andar
   balconies.forEach((b) => {
-    // Mãos-francesas triangulares inferiores
-    const brLeft = r2(b.balX + 6);
-    const brRight = r2(b.balX + b.balW - 6);
-    [brLeft, brRight].forEach((bx) => {
-      parts.push(
-        `<polyline points="${bx},${r2(b.deckY + 4)} ${bx},${r2(b.deckY + 15)} ${r2(bx + (bx === brLeft ? 10 : -10))},${r2(b.deckY + 4)}" fill="none" stroke="${ironColor}" stroke-width="${strokeW}" />`
+    shadowParts.push(
+      `<rect x="${r2(b.balX + shDx)}" y="${r2(b.deckY + shDy)}" width="${b.balW}" height="5.5" rx="0.8" />`,
+      `<rect x="${r2(b.balX + shDx)}" y="${r2(b.deckY - b.railH + shDy)}" width="${b.balW}" height="2.4" />`
+    );
+    const brPos =
+      style === 'double_bay'
+        ? [
+            { bx: b.balX + 8, dir: 1 },
+            { bx: b.balX + b.balW / 2, dir: -1 },
+            { bx: b.balX + b.balW - 8, dir: -1 }
+          ]
+        : [
+            { bx: b.balX + 8, dir: 1 },
+            { bx: b.balX + b.balW - 8, dir: -1 }
+          ];
+    brPos.forEach(({ bx, dir }) => {
+      shadowParts.push(
+        `<polygon points="${r2(bx + shDx)},${r2(b.deckY + 5 + shDy)} ${r2(bx + dir * 11 + shDx)},${r2(b.deckY + 5 + shDy)} ${r2(bx + shDx)},${r2(b.deckY + 18 + shDy)}" />`
       );
     });
-
-    // Plataforma treliçada
-    parts.push(
-      `<rect x="${b.balX}" y="${b.deckY}" width="${b.balW}" height="4.5" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${r2(thinW * 0.9)}" />`
-    );
-
-    // Guarda-corpo frontal
-    const railTop = r2(b.deckY - b.railH);
-    parts.push(
-      `<rect x="${b.balX}" y="${railTop}" width="${b.balW}" height="${b.railH}" fill="none" stroke="${ironColor}" stroke-width="${strokeW}" />`
-    );
-    parts.push(
-      `<line x1="${b.balX}" y1="${r2(railTop + 5)}" x2="${r2(b.balX + b.balW)}" y2="${r2(railTop + 5)}" stroke="${ironColor}" stroke-width="${thinW}" />`
-    );
-    for (let px = b.balX + 6; px <= b.balX + b.balW - 5; px += 6.5) {
-      parts.push(
-        `<line x1="${r2(px)}" y1="${railTop}" x2="${r2(px)}" y2="${b.deckY}" stroke="${ironColor}" stroke-width="${thinW}" />`
-      );
-    }
   });
 
-  // Drop ladder retrátil saindo do 1º pavimento tipo em direção ao térreo
-  const lowBal = balconies[balconies.length - 1];
-  const dropX = r2(
-    building.fireEscapePlacement === 'right' ? lowBal.balX + lowBal.balW - 14 : lowBal.balX + 6
-  );
-  const dropTop = r2(lowBal.deckY - 12);
-  const dropBot = r2(lowBal.deckY + 72);
-  parts.push(
-    `<line x1="${dropX}" y1="${dropTop}" x2="${dropX}" y2="${dropBot}" stroke="${ironColor}" stroke-width="${strokeW}" />`
-  );
-  parts.push(
-    `<line x1="${r2(dropX + 8)}" y1="${dropTop}" x2="${r2(dropX + 8)}" y2="${dropBot}" stroke="${ironColor}" stroke-width="${strokeW}" />`
-  );
-    for (let ry = dropTop + 6; ry <= dropBot - 4; ry += 8) {
-      parts.push(
-        `<line x1="${dropX}" y1="${r2(ry)}" x2="${r2(dropX + 8)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+  if (style !== 'industrial_cage') {
+    for (let i = 0; i < balconies.length - 1; i++) {
+      const upper = balconies[i];
+      const lower = balconies[i + 1];
+      const goRight = i % 2 === 0;
+      const x1 = r2(goRight ? upper.balX + 14 : upper.balX + upper.balW - 14);
+      const x2 = r2(goRight ? lower.balX + lower.balW - 14 : lower.balX + 14);
+      shadowParts.push(
+        `<line x1="${r2(x1 + shDx)}" y1="${r2(upper.deckY + shDy)}" x2="${r2(x2 + shDx)}" y2="${r2(lower.deckY + shDy)}" stroke="#0E0F12" stroke-opacity="0.16" stroke-width="5" />`
       );
     }
+  }
+  shadowParts.push(`</g>`);
+  parts.push(shadowParts.join('\n'));
+
+  // 2. ESCADA DE ACESSO À COBERTURA C/ PESCOÇO-DE-GANSO
+  const topBal = balconies[0];
+  const roofY = layout.bounds.topY;
+  const roofLadX = r2(
+    placement === 'right' ? topBal.balX + topBal.balW - 17 : topBal.balX + 9
+  );
+  const roofLadW = 8;
+  const gooseHookDir = placement === 'right' ? 1 : -1;
+
+  const gooseParts: string[] = [`<g class="fe-roof-gooseneck">`];
+  [roofLadX, r2(roofLadX + roofLadW)].forEach((rx) => {
+    gooseParts.push(
+      `<path d="M ${rx} ${topBal.deckY} L ${rx} ${r2(roofY + 4)} Q ${rx} ${r2(roofY - 6)} ${r2(rx + gooseHookDir * 6)} ${r2(roofY + 5)}" fill="none" stroke="${ironColor}" stroke-width="${strokeW}" />`
+    );
+  });
+  for (let ry = roofY + 6; ry < topBal.deckY - 4; ry += 6.8) {
+    gooseParts.push(
+      `<line x1="${roofLadX}" y1="${r2(ry)}" x2="${r2(roofLadX + roofLadW)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+    );
+  }
+  gooseParts.push(`</g>`);
+  parts.push(gooseParts.join('\n'));
+
+  // 3. CONEXÕES ENTRE PAVIMENTOS (ZIGUEZAGUE C/ DEGRAUS OU COLUNA INDUSTRIAL C/ GAIOLA)
+  if (style === 'industrial_cage') {
+    const refBal = balconies[0];
+    const shaftW = 9.5;
+    const shaftX = r2(
+      placement === 'right' ? refBal.balX + refBal.balW - 19 : refBal.balX + 9
+    );
+    const lowBal = balconies[balconies.length - 1];
+    const cageTop = r2(refBal.deckY - 8);
+    const cageBot = r2(lowBal.deckY + 2);
+
+    const cageParts: string[] = [`<g class="fe-safety-cage">`];
+    cageParts.push(
+      `<line x1="${shaftX}" y1="${cageTop}" x2="${shaftX}" y2="${cageBot}" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.15)}" />`,
+      `<line x1="${r2(shaftX + shaftW)}" y1="${cageTop}" x2="${r2(shaftX + shaftW)}" y2="${cageBot}" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.15)}" />`
+    );
+    for (let ry = cageTop + 5; ry <= cageBot - 3; ry += 7.5) {
+      cageParts.push(
+        `<line x1="${shaftX}" y1="${r2(ry)}" x2="${r2(shaftX + shaftW)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+      );
+    }
+
+    // Barras verticais e aros horizontais da gaiola de proteção
+    const hoopLeft = r2(shaftX - 5.5);
+    const hoopRight = r2(shaftX + shaftW + 5.5);
+    const hoopMid = r2(shaftX + shaftW / 2);
+    [hoopLeft, hoopMid, hoopRight].forEach((hx) => {
+      cageParts.push(
+        `<line x1="${hx}" y1="${cageTop}" x2="${hx}" y2="${r2(cageBot - 6)}" stroke="${ironColor}" stroke-width="${fineW}" opacity="0.85" />`
+      );
+    });
+    for (let hy = cageTop + 4; hy <= cageBot - 10; hy += 13) {
+      cageParts.push(
+        `<path d="M ${hoopLeft} ${r2(hy)} Q ${hoopMid} ${r2(hy - 5.5)} ${hoopRight} ${r2(hy)} Q ${hoopMid} ${r2(hy + 4.5)} ${hoopLeft} ${r2(hy)}" fill="none" stroke="${ironColor}" stroke-width="${thinW}" />`
+      );
+    }
+    cageParts.push(`</g>`);
+    parts.push(cageParts.join('\n'));
+  } else {
+    for (let i = 0; i < balconies.length - 1; i++) {
+      const upper = balconies[i];
+      const lower = balconies[i + 1];
+      const goRight = i % 2 === 0;
+      const inset = style === 'double_bay' ? 16 : 13;
+      const x1 = r2(goRight ? upper.balX + inset : upper.balX + upper.balW - inset);
+      const y1 = r2(upper.deckY);
+      const x2 = r2(goRight ? lower.balX + lower.balW - inset : lower.balX + inset);
+      const y2 = r2(lower.deckY);
+
+      parts.push(
+        `<g class="fe-stair-flight">`,
+        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.3)}" />`,
+        `<line x1="${r2(x1 + 5.5)}" y1="${y1}" x2="${r2(x2 + 5.5)}" y2="${y2}" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.15)}" />`,
+        `<line x1="${x1}" y1="${r2(y1 - 14)}" x2="${x2}" y2="${r2(y2 - 14)}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<line x1="${x1}" y1="${r2(y1 - 7)}" x2="${x2}" y2="${r2(y2 - 7)}" stroke="${ironColor}" stroke-width="${fineW}" />`,
+        `<line x1="${x1}" y1="${y1}" x2="${x1}" y2="${r2(y1 - 14)}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<line x1="${x2}" y1="${y2}" x2="${x2}" y2="${r2(y2 - 14)}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<g class="fe-stair-treads">`
+      );
+
+      const steps = style === 'double_bay' ? 10 : 8;
+      for (let k = 1; k < steps; k++) {
+        const t = k / steps;
+        const sx = r2(x1 + (x2 - x1) * t);
+        const sy = r2(y1 + (y2 - y1) * t);
+        parts.push(
+          `<rect x="${sx}" y="${r2(sy - 1)}" width="5.5" height="2" rx="0.4" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${fineW}" />`
+        );
+        if (k % 2 === 0) {
+          parts.push(
+            `<line x1="${sx}" y1="${sy}" x2="${sx}" y2="${r2(sy - 14)}" stroke="${ironColor}" stroke-width="${fineW}" />`
+          );
+        }
+      }
+
+      parts.push(`</g></g>`);
+    }
+  }
+
+  // 4. VARANDAS, MÃOS-FRANCESAS E GUARDA-CORPOS POR PAVIMENTO
+  const baySpan = style === 'double_bay' ? 2 : 1;
+  balconies.forEach((b) => {
+    parts.push(
+      `<g class="fe-balcony" data-bay-span="${baySpan}" data-level-type="${b.isAttic ? 'attic' : 'typical'}">`
+    );
+
+    // Mãos-francesas inferiores
+    const brackets =
+      style === 'double_bay'
+        ? [
+            { bx: r2(b.balX + 7), dir: 1 },
+            { bx: r2(b.balX + b.balW / 2), dir: -1 },
+            { bx: r2(b.balX + b.balW - 7), dir: -1 }
+          ]
+        : [
+            { bx: r2(b.balX + 7), dir: 1 },
+            { bx: r2(b.balX + b.balW - 7), dir: -1 }
+          ];
+
+    brackets.forEach(({ bx, dir }) => {
+      const topY = r2(b.deckY + 4.5);
+      const botY = r2(b.deckY + 18);
+      const armEndX = r2(bx + dir * 12);
+
+      if (style === 'soho_ornate') {
+        const ctrlX = r2(bx + dir * 11);
+        const midY = r2((topY + botY) / 2);
+        parts.push(
+          `<g class="fe-scroll-bracket">`,
+          `<line x1="${bx}" y1="${topY}" x2="${bx}" y2="${botY}" stroke="${ironColor}" stroke-width="${strokeW}" />`,
+          `<path d="M ${bx} ${botY} C ${ctrlX} ${botY}, ${bx} ${midY}, ${armEndX} ${topY}" fill="none" stroke="${ironColor}" stroke-width="${strokeW}" />`,
+          `<circle cx="${r2(bx + dir * 4.5)}" cy="${r2(topY + 4.5)}" r="2.2" fill="none" stroke="${ironColor}" stroke-width="${fineW}" />`,
+          `</g>`
+        );
+      } else {
+        parts.push(
+          `<polyline points="${bx},${topY} ${bx},${botY} ${armEndX},${topY}" fill="none" stroke="${ironColor}" stroke-width="${strokeW}" />`,
+          `<line x1="${bx}" y1="${r2(topY + 6)}" x2="${r2(bx + dir * 6)}" y2="${topY}" stroke="${ironColor}" stroke-width="${fineW}" />`,
+          `<circle cx="${bx}" cy="${r2(botY - 2)}" r="1.2" fill="${ironColor}" />`
+        );
+      }
+    });
+
+    // Plataforma dupla rebitada
+    parts.push(
+      `<rect x="${b.balX}" y="${b.deckY}" width="${b.balW}" height="5" rx="0.6" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${r2(thinW * 0.9)}" />`,
+      `<line x1="${r2(b.balX + 2)}" y1="${r2(b.deckY + 1.3)}" x2="${r2(b.balX + b.balW - 2)}" y2="${r2(b.deckY + 1.3)}" stroke="${ironHighlight}" stroke-width="${fineW}" />`
+    );
+    for (let rx = b.balX + 8; rx <= b.balX + b.balW - 8; rx += 14) {
+      parts.push(`<circle cx="${r2(rx)}" cy="${r2(b.deckY + 3.2)}" r="0.85" fill="${pal.cornice}" />`);
+    }
+
+    // Guarda-corpo frontal conforme o estilo selecionado
+    const railTop = r2(b.deckY - b.railH);
+    const railBot = b.deckY;
+    parts.push(
+      `<rect x="${b.balX}" y="${railTop}" width="${b.balW}" height="${b.railH}" fill="none" stroke="${ironColor}" stroke-width="${r2(strokeW * 1.05)}" />`
+    );
+
+    if (style === 'soho_ornate') {
+      const bandTop = r2(railTop + 5.5);
+      const bandBot = r2(railBot - 4.5);
+      parts.push(
+        `<line x1="${b.balX}" y1="${bandTop}" x2="${r2(b.balX + b.balW)}" y2="${bandTop}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<line x1="${b.balX}" y1="${bandBot}" x2="${r2(b.balX + b.balW)}" y2="${bandBot}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<g class="fe-ornate-rings">`
+      );
+      for (let rx = b.balX + 7; rx <= b.balX + b.balW - 6; rx += 8) {
+        parts.push(
+          `<circle cx="${r2(rx)}" cy="${r2(railTop + 2.8)}" r="2.2" fill="none" stroke="${ironColor}" stroke-width="${fineW}" />`,
+          `<circle cx="${r2(rx)}" cy="${r2(railBot - 2.2)}" r="1.9" fill="none" stroke="${ironColor}" stroke-width="${fineW}" />`
+        );
+      }
+      parts.push(`</g>`);
+
+      for (let px = b.balX + 7; px <= b.balX + b.balW - 6; px += 7.5) {
+        parts.push(
+          `<line x1="${r2(px)}" y1="${bandTop}" x2="${r2(px)}" y2="${bandBot}" stroke="${ironColor}" stroke-width="${fineW}" />`
+        );
+      }
+
+      const midBalX = r2(b.balX + b.balW / 2);
+      const midBalY = r2((bandTop + bandBot) / 2);
+      parts.push(
+        `<circle cx="${midBalX}" cy="${midBalY}" r="3.8" fill="none" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<circle cx="${midBalX}" cy="${midBalY}" r="1.4" fill="${ironColor}" />`,
+        `<circle cx="${b.balX}" cy="${r2(railTop - 1.2)}" r="1.8" fill="${ironColor}" />`,
+        `<circle cx="${r2(b.balX + b.balW)}" cy="${r2(railTop - 1.2)}" r="1.8" fill="${ironColor}" />`
+      );
+    } else if (style === 'industrial_cage') {
+      const bayCount = b.balW >= 120 ? 5 : 3;
+      const secW = b.balW / bayCount;
+      parts.push(
+        `<line x1="${b.balX}" y1="${r2(railTop + 3.5)}" x2="${r2(b.balX + b.balW)}" y2="${r2(railTop + 3.5)}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+        `<g class="fe-x-bracing">`
+      );
+      for (let s = 0; s < bayCount; s++) {
+        const sx0 = r2(b.balX + s * secW);
+        const sx1 = r2(b.balX + (s + 1) * secW);
+        const bxTop = r2(railTop + 3.5);
+        parts.push(
+          `<line x1="${sx0}" y1="${bxTop}" x2="${sx0}" y2="${railBot}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+          `<line x1="${sx0}" y1="${bxTop}" x2="${sx1}" y2="${railBot}" stroke="${ironColor}" stroke-width="${fineW}" />`,
+          `<line x1="${sx1}" y1="${bxTop}" x2="${sx0}" y2="${railBot}" stroke="${ironColor}" stroke-width="${fineW}" />`
+        );
+      }
+      parts.push(`</g>`);
+    } else {
+      // 'classic_zigzag' ou 'double_bay'
+      parts.push(
+        `<line x1="${b.balX}" y1="${r2(railTop + 5)}" x2="${r2(b.balX + b.balW)}" y2="${r2(railTop + 5)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+      );
+      if (style === 'double_bay') {
+        const centerPostX = r2(b.balX + b.balW / 2);
+        parts.push(
+          `<line x1="${centerPostX}" y1="${railTop}" x2="${centerPostX}" y2="${railBot}" stroke="${ironColor}" stroke-width="${strokeW}" />`
+        );
+      }
+      for (let px = b.balX + 6; px <= b.balX + b.balW - 5; px += 6) {
+        parts.push(
+          `<line x1="${r2(px)}" y1="${railTop}" x2="${r2(px)}" y2="${railBot}" stroke="${ironColor}" stroke-width="${fineW}" />`
+        );
+      }
+    }
+
+    parts.push(`</g>`);
+  });
+
+  // 5. DROP LADDER RETRÁTIL DO TÉRREO C/ ROLDANA E CONTRAPESO
+  const lowBal = balconies[balconies.length - 1];
+  const dropW = 8.5;
+  const dropX = r2(
+    placement === 'right' ? lowBal.balX + lowBal.balW - 17 : lowBal.balX + 9
+  );
+  const dropTop = r2(lowBal.deckY - lowBal.railH);
+  const dropBot =
+    dropMode === 'deployed'
+      ? r2(Math.max(lowBal.deckY + 56, layout.bounds.bottomY - 6))
+      : r2(lowBal.deckY + 26);
+
+  const cwX = r2(placement === 'right' ? dropX - 6 : dropX + dropW + 2.5);
+  const cwTop =
+    dropMode === 'deployed' ? r2(dropTop + 2) : r2(lowBal.deckY - 7);
+  const pulleyX = r2((dropX + dropW / 2 + cwX + 1.8) / 2);
+  const pulleyY = r2(dropTop - 3);
+
+  parts.push(
+    `<g class="fe-drop-ladder" data-drop-mode="${dropMode}" data-drop-bot="${dropBot}">`,
+    `<line x1="${dropX}" y1="${dropTop}" x2="${dropX}" y2="${dropBot}" stroke="${ironColor}" stroke-width="${strokeW}" />`,
+    `<line x1="${r2(dropX + dropW)}" y1="${dropTop}" x2="${r2(dropX + dropW)}" y2="${dropBot}" stroke="${ironColor}" stroke-width="${strokeW}" />`
+  );
+  for (let ry = dropTop + 5.5; ry <= dropBot - 3; ry += 7.5) {
+    parts.push(
+      `<line x1="${dropX}" y1="${r2(ry)}" x2="${r2(dropX + dropW)}" y2="${r2(ry)}" stroke="${ironColor}" stroke-width="${thinW}" />`
+    );
+  }
+  // Roldana, cabo e contrapeso cilíndrico
+  parts.push(
+    `<circle cx="${pulleyX}" cy="${pulleyY}" r="2.8" fill="${pal.cornice}" stroke="${ironColor}" stroke-width="${thinW}" />`,
+    `<line x1="${r2(dropX + dropW / 2)}" y1="${dropTop}" x2="${pulleyX}" y2="${pulleyY}" stroke="${ironColor}" stroke-width="${fineW}" />`,
+    `<line x1="${r2(cwX + 2)}" y1="${cwTop}" x2="${pulleyX}" y2="${pulleyY}" stroke="${ironColor}" stroke-width="${fineW}" />`,
+    `<rect class="fe-counterweight" x="${cwX}" y="${cwTop}" width="4.2" height="10" rx="1.5" fill="${ironColor}" stroke="${pal.stroke}" stroke-width="${fineW}" />`,
+    `</g>`
+  );
 
   parts.push(`</g>`);
   return parts.join('\n');

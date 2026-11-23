@@ -41,7 +41,7 @@ O **NY Facade Studio** é um estúdio paramétrico e data-driven para composiç�
 | **Toldo no Térreo** | `Térreo Inteiro`, `Só Porta(s)`, `Só Vitrine` · `Listrado NY`, `Lona Sólida`, `Marquise Curva` | `Só Vitrine · Listrado NY` | Fixado logo abaixo da cornija do térreo com saia ondulada, lona sólida ou marquise curva e cor `colors.awning`. |
 | **Jardim no Rodapé** | `Gradil + Sebes`, `Floreira Pedra`, `Canteiro Floral` | `Ligado` | Ocupa o rodapé sob a vitrine evitando `TERREO_PORTA`. |
 | **Escada na Porta (Stoop)** | `Stoop Pedra`, `Corrimão Ferro`, `Degraus Largos` | `Ligado` | Escadaria frontal ancorada sob `TERREO_PORTA`. |
-| **Escada de Incêndio** | `Esquerda`, `Centro`, `Direita` | `Desligado` | Varandas gradeadas por andar, mãos-francesas, ziguezague diagonal e drop ladder no térreo. |
+| **Escada de Incêndio** | `4 Modelos`: Tenement Clássica, SoHo Ornamentada, Varanda Dupla (2 Janelas), Industrial Gaiola · `Prumada` (`Esq`/`Centro`/`Dir`) · `Drop Ladder` (`Recolhida`/`Estendida`) | `Desligado` (`Clássica · Esq · Recolhida`) | Conecta automaticamente Ático + Pavimentos Tipo, inclui pescoço-de-ganso na cobertura, sombra projetada na parede e contrapeso/polia para não colidir com o térreo. |
 
 ### 3.2. Composição Estrutural & Regra de Terços no Térreo (`1. Estrutura`)
 - **Pavimento Ático**: Ativa/desativa o andar superior reduzido (`68u`) sincronizado com as prumadas dos pavimentos tipo e sua própria cornija inferior.

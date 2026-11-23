@@ -143,16 +143,17 @@ export const FEATURE_DOCS: FeatureDocSection[] = [
           'Renderiza degraus escalonados com muretas laterais (cheek walls) ou corrimãos metálicos sob TERREO_PORTA.'
       },
       {
-        name: 'Escada de Incêndio na Fachada',
-        control: 'Switch + Prumada',
-        rangeOrOptions: '← Esquerda | Centro | Direita →',
-        defaultValue: 'Desligado (Esquerda)',
+        name: 'Escada de Incêndio na Fachada (4 Modelos)',
+        control: 'Switch + Select + 2 Grupos Segmentados',
+        rangeOrOptions:
+          'Modelos: Tenement Clássica | SoHo Ornamentada | Varanda Dupla (2 Janelas) | Industrial c/ Gaiola · Prumada: Esq/Centro/Dir · Drop Ladder: Recolhida/Estendida',
+        defaultValue: 'Desligado (Tenement Clássica · Esq · Recolhida)',
         behavior:
-          'Adiciona varandas gradeadas com mãos-francesas, lances diagonais em ziguezague entre andares, escada de cobertura e drop ladder no térreo.'
+          'Conecta automaticamente Pavimentos Tipo e Ático, inclui pescoço-de-ganso na cobertura, sombra projetada e escada retrátil com contrapeso/polia.'
       }
     ],
     tips: [
-      'Ative a Escada de Incêndio em edifícios com 2 a 6 pavimentos tipo para visualizar o ziguezague contínuo entre andares.'
+      'Ative a Escada de Incêndio em edifícios com 2 a 6 pavimentos tipo para visualizar o ziguezague contínuo entre andares, e experimente "Varanda Dupla" quando houver >= 2 janelas por pavimento.'
     ]
   },
   {

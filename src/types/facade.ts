@@ -29,6 +29,12 @@ export type AwningStyle = 'striped_classic' | 'solid_valance' | 'arched_canopy';
 export type GardenStyle = 'iron_rail_hedges' | 'planter_box' | 'flower_bed';
 export type EntranceStairsStyle = 'stoop_classic' | 'stoop_iron_rail' | 'wide_steps';
 export type FireEscapePlacement = 'left' | 'center' | 'right';
+export type FireEscapeStyle =
+  | 'classic_zigzag'
+  | 'soho_ornate'
+  | 'double_bay'
+  | 'industrial_cage';
+export type FireEscapeDropMode = 'retracted' | 'deployed';
 
 export type SlotZone = 'typical' | 'attic' | 'ground' | 'door';
 export type ActiveTab = 'structure' | 'windows' | 'doors' | 'interpolation' | 'guide';
@@ -82,6 +88,8 @@ export interface BuildingConfig {
   entranceStairsStyle: EntranceStairsStyle;
   hasFireEscape: boolean;
   fireEscapePlacement: FireEscapePlacement;
+  fireEscapeStyle: FireEscapeStyle;
+  fireEscapeDropMode: FireEscapeDropMode;
   paletteId: string;
   colors: BuildingColors;
 }
